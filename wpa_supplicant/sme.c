@@ -404,6 +404,9 @@ static bool wpas_ml_element(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
 	if (!(wpa_s->drv_flags2 & WPA_DRIVER_FLAGS2_MLO))
 		return false;
 
+	if (ssid->disable_eht || ssid->disable_mlo)
+		return false;
+
 	mlbuf = wpa_bss_defrag_mle(bss, MULTI_LINK_CONTROL_TYPE_BASIC);
 	if (!mlbuf) {
 		wpa_dbg(wpa_s, MSG_DEBUG, "MLD: No ML element");
