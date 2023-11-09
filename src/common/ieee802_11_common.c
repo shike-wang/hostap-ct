@@ -284,6 +284,7 @@ static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
 
 	ext_id = *pos++;
 	elen--;
+	wpa_printf(MSG_ERROR, "%s: shikew_be WLAN_EID_EXTENSION ext_id=%u len=%u %d", __func__, ext_id, (unsigned int) elen, __LINE__);
 
 	switch (ext_id) {
 	case WLAN_EID_EXT_ASSOC_DELAY_INFO:
@@ -379,10 +380,13 @@ static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
 	case WLAN_EID_EXT_EHT_CAPABILITIES:
 		elems->eht_capabilities = pos;
 		elems->eht_capabilities_len = elen;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be WLAN_EID_EXTENSION WLAN_EID_EXT_EHT_CAPABILITIES len=%u %d", __func__, (unsigned int) elen, __LINE__);
 		break;
 	case WLAN_EID_EXT_EHT_OPERATION:
 		elems->eht_operation = pos;
 		elems->eht_operation_len = elen;
+		wpa_printf(MSG_ERROR, "%s: shikew_be WLAN_EID_EXTENSION WLAN_EID_EXT_EHT_OPERATION len=%u %d", __func__, (unsigned int) elen, __LINE__);
 		break;
 	case WLAN_EID_EXT_MULTI_LINK:
 		if (elen < 2)
@@ -390,11 +394,13 @@ static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
 		if (ieee802_11_parse_mle(pos, elen, &total_len, elems,
 					 show_errors))
 			return -1;
+		wpa_printf(MSG_ERROR, "%s: shikew_be WLAN_EID_EXTENSION WLAN_EID_EXT_MULTI_LINK len=%u %d", __func__, (unsigned int) elen, __LINE__);
 		break;
 	case WLAN_EID_EXT_KNOWN_BSSID:
 		elems->mbssid_known_bss = pos;
 		elems->mbssid_known_bss_len = elen;
 		break;
+
 	default:
 		if (show_errors) {
 			wpa_printf(MSG_MSGDUMP,
@@ -643,6 +649,7 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 
 			break;
 		case WLAN_EID_EXTENSION:
+			wpa_printf(MSG_ERROR, "%s: shikew_be WLAN_EID_EXTENSION %d", __func__, __LINE__);
 			if (ieee802_11_parse_extension(pos, elen, elems, start,
 						       len, show_errors))
 				unknown++;

@@ -182,8 +182,11 @@ static int hostapd_ctrl_iface_update(struct hostapd_data *hapd, char *txt)
 {
 	struct hostapd_config * (*config_read_cb)(const char *config_fname);
 	struct hostapd_iface *iface = hapd->iface;
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	config_read_cb = iface->interfaces->config_read_cb;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be switch config_read_cb %d",__func__, __LINE__);
 	iface->interfaces->config_read_cb = hostapd_ctrl_iface_config_read;
 	reload_opts = txt;
 

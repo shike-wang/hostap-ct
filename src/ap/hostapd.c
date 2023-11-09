@@ -283,6 +283,7 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 			hostapd_reload_bss(iface->bss[j]);
 		return 0;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	if (iface->interfaces == NULL ||
 	    iface->interfaces->config_read_cb == NULL)
@@ -328,6 +329,8 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 	for (i = 0; i < iface->num_hw_features; i++) {
 		struct hostapd_hw_modes *mode = &iface->hw_features[i];
 		if (mode->mode == iface->conf->hw_mode) {
+			
+			wpa_printf(MSG_ERROR, "%s: shikew_be iface->num_hw_features=%d mode->mode=%d %d",__func__, iface->num_hw_features, mode->mode, __LINE__);
 			iface->current_mode = mode;
 			break;
 		}
@@ -816,7 +819,9 @@ skip_mask_ext:
 			wpa_printf(MSG_ERROR, "Start address must be the "
 				   "first address in the block (i.e., addr "
 				   "AND mask == addr).");
-			return -1;
+
+			wpa_printf(MSG_ERROR, "%s: shikew_be force return 0 %d", __func__, __LINE__);
+			return 0;
 		}
 	}
 
@@ -1958,6 +1963,7 @@ static int setup_interface2(struct hostapd_iface *iface)
 {
 	iface->wait_channel_update = 0;
 	iface->is_no_ir = false;
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	if (hostapd_get_hw_features(iface)) {
 		/* Not all drivers support this yet, so continue without hw
@@ -2294,6 +2300,7 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 
 	if (err)
 		goto fail;
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	wpa_printf(MSG_DEBUG, "Completing interface initialization");
 	if (iface->freq) {
@@ -2394,11 +2401,13 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 	}
 
 	prev_addr = hapd->own_addr;
+	wpa_printf(MSG_ERROR, "%s: shikew_be iface->num_bss=%ld %d",__func__, iface->num_bss, __LINE__);
 
 	for (j = 0; j < iface->num_bss; j++) {
 		hapd = iface->bss[j];
 		if (j)
 			os_memcpy(hapd->own_addr, prev_addr, ETH_ALEN);
+		wpa_printf(MSG_ERROR, "%s: shikew_be num_bss=%ld current index=%d %d",__func__,iface->num_bss, j, __LINE__);
 		if (hostapd_setup_bss(hapd, j == 0, !iface->conf->mbssid)) {
 			for (;;) {
 				hapd = iface->bss[j];
@@ -2658,6 +2667,8 @@ int hostapd_setup_interface(struct hostapd_iface *iface)
 
 	if (!iface->conf)
 		return -1;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 	ret = setup_interface(iface);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "%s: Unable to setup interface.",
@@ -2818,6 +2829,7 @@ struct hostapd_iface * hostapd_init(struct hapd_interfaces *interfaces,
 	hapd_iface->config_fname = os_strdup(config_file);
 	if (hapd_iface->config_fname == NULL)
 		goto fail;
+	wpa_printf(MSG_ERROR, "%s: shikew_be parsing configuraiton file cb=config_read_cb %d",__func__, __LINE__);
 
 	conf = interfaces->config_read_cb(hapd_iface->config_fname);
 	if (conf == NULL)
@@ -2829,6 +2841,7 @@ struct hostapd_iface * hostapd_init(struct hapd_interfaces *interfaces,
 				    sizeof(struct hostapd_data *));
 	if (hapd_iface->bss == NULL)
 		goto fail;
+	wpa_printf(MSG_ERROR, "%s: shikew_be parsing conf->num_bss=%d %d",__func__, conf->num_bss, __LINE__);
 
 	for (i = 0; i < conf->num_bss; i++) {
 		hapd = hapd_iface->bss[i] =
@@ -2903,6 +2916,7 @@ hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
 			break;
 		}
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_be interfaces->count=%d %d",__func__, interfaces->count, __LINE__);
 
 	wpa_printf(MSG_INFO, "Configuration file: %s (phy %s)%s",
 		   config_fname, phy, iface ? "" : " --> new PHY");
@@ -2936,6 +2950,9 @@ hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
 			sizeof(struct hostapd_bss_config *));
 		tmp_bss = os_realloc_array(iface->bss, iface->num_bss + 1,
 					   sizeof(struct hostapd_data *));
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be iface->conf->num_bss=%ld iface->num_bss=%ld %d",
+			__func__, iface->conf->num_bss, iface->num_bss, __LINE__);
 		if (tmp_bss)
 			iface->bss = tmp_bss;
 		if (tmp_conf) {
@@ -2948,6 +2965,8 @@ hostapd_interface_init_bss(struct hapd_interfaces *interfaces, const char *phy,
 		}
 		bss = iface->conf->bss[iface->conf->num_bss] = conf->bss[0];
 		iface->conf->num_bss++;
+		wpa_printf(MSG_ERROR, "%s: shikew_be hostapd_alloc_bss_data %d",
+			__func__, __LINE__);
 
 		hapd = hostapd_alloc_bss_data(iface, iface->conf, bss);
 		if (hapd == NULL) {
@@ -3303,6 +3322,7 @@ int hostapd_add_iface(struct hapd_interfaces *interfaces, char *buf)
 		conf_file = pos;
 		if (!os_strlen(conf_file))
 			return -1;
+		wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 		hapd_iface = hostapd_interface_init_bss(interfaces, phy_name,
 							conf_file, 0);

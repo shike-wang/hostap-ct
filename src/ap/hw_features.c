@@ -82,6 +82,7 @@ int hostapd_get_hw_features(struct hostapd_iface *iface)
 	enum hostapd_hw_mode mode = HOSTAPD_MODE_IEEE80211ANY;
 	bool is_6ghz = false;
 	bool orig_mode_valid = false;
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	if (hostapd_drv_none(hapd))
 		return -1;
@@ -115,9 +116,11 @@ int hostapd_get_hw_features(struct hostapd_iface *iface)
 	hostapd_free_hw_features(iface->hw_features, iface->num_hw_features);
 	iface->hw_features = modes;
 	iface->num_hw_features = num_modes;
+	wpa_printf(MSG_ERROR, "%s: shikew_be num_modes=%d %d",__func__, num_modes, __LINE__);
 
 	for (i = 0; i < num_modes; i++) {
 		struct hostapd_hw_modes *feature = &modes[i];
+		
 		int dfs_enabled = hapd->iconf->ieee80211h &&
 			(iface->drv_flags & WPA_DRIVER_FLAGS_RADAR);
 
@@ -1110,6 +1113,7 @@ int hostapd_determine_mode(struct hostapd_iface *iface)
 		target_mode = HOSTAPD_MODE_IEEE80211AD;
 	else
 		target_mode = HOSTAPD_MODE_IEEE80211A;
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	for (i = 0; i < iface->num_hw_features; i++) {
 		struct hostapd_hw_modes *mode;

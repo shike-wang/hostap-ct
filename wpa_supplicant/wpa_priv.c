@@ -297,6 +297,7 @@ static void wpa_priv_cmd_associate(struct wpa_priv_interface *iface,
 	struct privsep_cmd_associate *assoc;
 	u8 *bssid;
 	int res;
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d", __func__, __LINE__);
 
 	if (iface->drv_priv == NULL || iface->driver->associate == NULL)
 		return;

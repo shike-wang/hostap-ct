@@ -202,9 +202,16 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
 		if (is_zero_ether_addr(b)) {
 			os_memcpy(hapd->own_addr, h_hapd->mld_addr, ETH_ALEN);
 			random_mac_addr_keep_oui(hapd->own_addr);
+			wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 		} else {
 			os_memcpy(hapd->own_addr, b, ETH_ALEN);
+			wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 		}
+		wpa_printf(MSG_ERROR, "%s: shikew_be, hapd->mld_link_id=%d mld_addr=" MACSTR
+			   ", own_addr=" MACSTR ", b=" MACSTR, __func__,
+			   hapd->mld_link_id, MAC2STR(hapd->mld_addr),
+			MAC2STR(hapd->own_addr),
+			MAC2STR(b));
 
 		/*
 		 * Mark the interface as a secondary interface, as this
@@ -284,13 +291,28 @@ static int hostapd_driver_init(struct hostapd_iface *iface)
 	 * configured, and otherwise it would be the configured BSSID.
 	 */
 	if (hapd->conf->mld_ap) {
+		wpa_printf(MSG_ERROR,
+			   "%s: shikew_be mld_addr=" MACSTR
+				", own_addr=" MACSTR" %d",
+			   __func__,
+			   MAC2STR(hapd->mld_addr),
+			   MAC2STR(hapd->own_addr),
+			   __LINE__
+			   );
 		os_memcpy(hapd->mld_addr, hapd->own_addr, ETH_ALEN);
 		hapd->mld_next_link_id = 0;
 		hapd->mld_link_id = hapd->mld_next_link_id++;
-		if (!b)
+		if (!b) {
 			random_mac_addr_keep_oui(hapd->own_addr);
-		else
+			wpa_printf(MSG_ERROR,
+				   "%s: shikew_be random_mac_addr_keep_oui=" MACSTR,
+				   __func__,
+				   MAC2STR(hapd->own_addr)
+				   );
+		}
+		else {
 			os_memcpy(hapd->own_addr, b, ETH_ALEN);
+		}
 	}
 
 setup_mld:
@@ -366,6 +388,8 @@ hostapd_interface_init(struct hapd_interfaces *interfaces, const char *if_name,
 {
 	struct hostapd_iface *iface;
 	int k;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	wpa_printf(MSG_DEBUG, "Configuration file: %s", config_fname);
 	iface = hostapd_init(interfaces, config_fname);
@@ -790,11 +814,14 @@ int main(int argc, char *argv[])
 	if (!interfaces.dpp)
 		return -1;
 #endif /* CONFIG_DPP */
+	wpa_printf(MSG_ERROR, "%s: shikew_be argc=%d interfaces.count=%d optind=%d num_bss_configs=%d %ld",__func__,argc, interfaces.count, optind, num_bss_configs, __LINE__);
 
 	for (;;) {
 		c = getopt(argc, argv, "b:Bde:f:hi:KP:sSTtu:vg:G:q");
 		if (c < 0)
 			break;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be argc=%d interfaces.count=%d optind=%d num_bss_configs=%d c=%c %ld",__func__,argc, interfaces.count, optind, num_bss_configs, c, __LINE__);
 		switch (c) {
 		case 'h':
 			usage();
@@ -873,10 +900,12 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_be argc=%d interfaces.count=%d optind=%d num_bss_configs=%d %ld",__func__,argc, interfaces.count, optind, num_bss_configs, __LINE__);
 
 	if (optind == argc && interfaces.global_iface_path == NULL &&
 	    num_bss_configs == 0)
 		usage();
+	wpa_printf(MSG_ERROR, "%s: shikew_be argc=%d interfaces.count=%d optind=%d num_bss_configs=%d %ld",__func__,argc, interfaces.count, optind, num_bss_configs, __LINE__);
 
 	wpa_msg_register_ifname_cb(hostapd_msg_ifname_cb);
 
@@ -899,6 +928,8 @@ int main(int argc, char *argv[])
 #endif /* CONFIG_DEBUG_LINUX_TRACING */
 
 	interfaces.count = argc - optind;
+	wpa_printf(MSG_ERROR, "%s: shikew_be argc=%d interfaces.count=%d optind=%d num_bss_configs=%d %ld",__func__,argc, interfaces.count, optind, num_bss_configs, __LINE__);
+
 	if (interfaces.count || num_bss_configs) {
 		interfaces.iface = os_calloc(interfaces.count + num_bss_configs,
 					     sizeof(struct hostapd_iface *));
@@ -933,6 +964,7 @@ int main(int argc, char *argv[])
 
 		if (i < if_names_size)
 			if_name = if_names[i];
+		wpa_printf(MSG_ERROR, "%s: shikew_be interfaces.count=%d %d",__func__, interfaces.count, __LINE__);
 
 		interfaces.iface[i] = hostapd_interface_init(&interfaces,
 							     if_name,
@@ -960,6 +992,8 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 		*fname++ = '\0';
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 		iface = hostapd_interface_init_bss(&interfaces, bss_config[i],
 						   fname, debug);
 		if (iface == NULL)

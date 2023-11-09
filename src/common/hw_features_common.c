@@ -397,6 +397,8 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 		he_enabled = 0;
 	if (!eht_cap || !eht_cap->eht_supported)
 		eht_enabled = 0;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be he_enabled=%d eht_enabled=%d",__func__, he_enabled, eht_enabled);
 	os_memset(data, 0, sizeof(*data));
 	data->mode = mode;
 	data->freq = freq;

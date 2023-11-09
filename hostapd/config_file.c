@@ -4876,6 +4876,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 #ifdef CONFIG_IEEE80211BE
 	} else if (os_strcmp(buf, "ieee80211be") == 0) {
 		conf->ieee80211be = atoi(pos);
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be ieee80211be=%d buf=%s",__func__, conf->ieee80211be, buf);
 	} else if (os_strcmp(buf, "eht_oper_chwidth") == 0) {
 		conf->eht_oper_chwidth = atoi(pos);
 	} else if (os_strcmp(buf, "eht_oper_centr_freq_seg0_idx") == 0) {

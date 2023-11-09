@@ -418,6 +418,7 @@ static int send_and_recv(struct nl80211_global *global,
 {
 	struct nl_cb *cb;
 	int err = -ENOMEM, opt;
+	//wpa_printf(MSG_ERROR, "%s: shikew_be  %d",__func__, __LINE__);
 
 	if (!msg)
 		return -ENOMEM;
@@ -425,6 +426,7 @@ static int send_and_recv(struct nl80211_global *global,
 	cb = nl_cb_clone(global->nl_cb);
 	if (!cb)
 		goto out;
+	//wpa_printf(MSG_ERROR, "%s: shikew_be  %d",__func__, __LINE__);
 
 	/* try to set NETLINK_EXT_ACK to 1, ignoring errors */
 	opt = 1;
@@ -449,22 +451,29 @@ static int send_and_recv(struct nl80211_global *global,
 	}
 
 	err = 1;
+	//wpa_printf(MSG_ERROR, "%s: shikew_be err=%d %d",__func__, err, __LINE__);
 
 	nl_cb_err(cb, NL_CB_CUSTOM, error_handler, &err);
+	//wpa_printf(MSG_ERROR, "%s: shikew_be err=%d %d",__func__, err, __LINE__);
 	nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_handler, &err);
+	//wpa_printf(MSG_ERROR, "%s: shikew_be err=%d %d",__func__, err, __LINE__);
 	if (ack_handler_custom) {
 		struct nl80211_ack_ext_arg *ext_arg = ack_data;
 
 		ext_arg->err = &err;
 		nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM,
 			  ack_handler_custom, ack_data);
+		//wpa_printf(MSG_ERROR, "%s: shikew_be err=%d %d",__func__, err, __LINE__);
 	} else {
 		nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &err);
+		//wpa_printf(MSG_ERROR, "%s: shikew_be err=%d %d",__func__, err, __LINE__);
 	}
-
+	//wpa_printf(MSG_ERROR, "%s: shikew_be err=%d %d",__func__, err, __LINE__);
+//
 	if (valid_handler)
 		nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM,
 			  valid_handler, valid_data);
+	//wpa_printf(MSG_ERROR, "%s: shikew_be err=%d %d",__func__, err, __LINE__);
 
 	while (err > 0) {
 		int res = nl_recvmsgs(nl_handle, cb);
@@ -493,6 +502,8 @@ static int send_and_recv(struct nl80211_global *global,
 	/* Always clear the message as it can potentially contain keys */
 	nl80211_nlmsg_clear(msg);
 	nlmsg_free(msg);
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be err=%d %d",__func__, err, __LINE__);
 	return err;
 }
 
@@ -2941,6 +2952,8 @@ wpa_driver_nl80211_finish_drv_init(struct wpa_driver_nl80211_data *drv,
 	    nl80211_get_ifmode(bss) != NL80211_IFTYPE_P2P_DEVICE &&
 	    linux_iface_up(drv->global->ioctl_sock, bss->ifname) > 0)
 		drv->start_iface_up = 1;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	if (wpa_driver_nl80211_capa(drv))
 		return -1;
@@ -4190,6 +4203,8 @@ static int wpa_driver_nl80211_send_mlme(struct i802_bss *bss, const u8 *data,
 	int use_cookie = 1;
 	int res;
 	struct i802_link *link = nl80211_get_link(bss, link_id);
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be link_id=%d %d",__func__, link_id, __LINE__);
 
 	mgmt = (struct ieee80211_mgmt *) data;
 	fc = le_to_host16(mgmt->frame_control);
@@ -4303,8 +4318,11 @@ static int wpa_driver_nl80211_send_mlme(struct i802_bss *bss, const u8 *data,
 
 	if ((noack || WLAN_FC_GET_TYPE(fc) != WLAN_FC_TYPE_MGMT ||
 	     WLAN_FC_GET_STYPE(fc) != WLAN_FC_STYPE_ACTION) &&
-	    link_id == NL80211_DRV_LINK_ID_NA)
+	    link_id == NL80211_DRV_LINK_ID_NA) {
 		use_cookie = 0;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be link_id=%d use_cookie=0 %d",__func__, link_id, __LINE__);
+	}
 send_frame_cmd:
 #ifdef CONFIG_TESTING_OPTIONS
 	if (no_encrypt && !encrypt && !drv->use_monitor) {
@@ -5436,6 +5454,10 @@ static int nl80211_set_channel(struct i802_bss *bss,
 		   freq->freq, freq->ht_enabled, freq->vht_enabled,
 		   freq->he_enabled, freq->eht_enabled, freq->bandwidth,
 		   freq->center_freq1, freq->center_freq2);
+	
+	wpa_printf(MSG_DEBUG, "nl80211: Set link_id=%u cmd=%s",
+		   freq->link_id, set_chan ? "NL80211_CMD_SET_CHANNEL" :
+			      "NL80211_CMD_SET_WIPHY");
 
 	msg = nl80211_bss_msg(bss, 0, set_chan ? NL80211_CMD_SET_CHANNEL :
 			      NL80211_CMD_SET_WIPHY);
@@ -5947,7 +5969,7 @@ static int nl80211_create_iface_once(struct wpa_driver_nl80211_data *drv,
 	int ifidx;
 	int ret = -ENOBUFS;
 
-	wpa_printf(MSG_DEBUG, "nl80211: Create interface iftype %d (%s)",
+	wpa_printf(MSG_DEBUG, "nl80211: Create interface iftype ifname=%s %d (%s)",ifname,
 		   iftype, nl80211_iftype_str(iftype));
 
 	msg = nl80211_cmd_msg(drv->first_bss, 0, NL80211_CMD_NEW_INTERFACE);
@@ -6018,6 +6040,8 @@ static int nl80211_create_iface_once(struct wpa_driver_nl80211_data *drv,
 		nl80211_remove_iface(drv, ifidx);
 		return -1;
 	}
+	wpa_printf(MSG_DEBUG, "%s: nl80211: Create interface iftype ifname=%s %d (%s)  ifidx=%d",__func__,ifname,
+		   iftype, nl80211_iftype_str(iftype), ifidx);
 
 	return ifidx;
 }
@@ -6033,6 +6057,8 @@ int nl80211_create_iface(struct i802_bss *bss, struct wpa_driver_nl80211_data *d
 
 	ret = nl80211_create_iface_once(drv, ifname, iftype, addr, wds, handler,
 					arg);
+	wpa_printf(MSG_ERROR, "%s: shikew_be ifname=%s if_nametoindex(ifname)=%d %d", __func__, ifname, if_nametoindex(ifname), __LINE__);
+	os_sleep(20, 0);
 
 	/* if error occurred and interface exists already */
 	if (ret == -ENFILE && if_nametoindex(ifname)) {
@@ -6070,6 +6096,8 @@ int nl80211_create_iface(struct i802_bss *bss, struct wpa_driver_nl80211_data *d
 		nl80211_set_legacy_rates(bss, drv, drv->ifindex, 1, bss->adv_legacy_rates, 1,
 					 bss->adv_ht_mask, bss->adv_vht_mask);
 	}
+	wpa_printf(MSG_DEBUG, "nl80211: Create interface iftype ifname=%s %d (%s)  ret=%d",ifname,
+		   iftype, nl80211_iftype_str(iftype), ret);
 
 	return ret;
 }
@@ -6661,6 +6689,8 @@ static int nl80211_connect_common(struct wpa_driver_nl80211_data *drv,
 				  struct wpa_driver_associate_params *params,
 				  struct nl_msg *msg)
 {
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d", __func__, __LINE__);
+
 	if (params->mld_params.mld_addr && params->mld_params.valid_links > 0) {
 		struct wpa_driver_mld_params *mld_params = &params->mld_params;
 		struct nlattr *links, *attr;
@@ -7482,8 +7512,12 @@ static int wpa_driver_nl80211_get_capa(void *priv,
 	struct i802_bss *bss = priv;
 	struct wpa_driver_nl80211_data *drv = bss->drv;
 
+	wpa_printf(MSG_ERROR, "%s: shikew_be drv->has_capability=%d %d",__func__,drv->has_capability, __LINE__);
+
 	if (!drv->has_capability)
 		return -1;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 	os_memcpy(capa, &drv->capa, sizeof(*capa));
 	if (drv->extended_capa && drv->extended_capa_mask) {
 		capa->extended_capa = drv->extended_capa;
@@ -8721,6 +8755,7 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 	struct wpa_driver_nl80211_data *drv = bss->drv;
 	int ifidx;
 	int added = 1;
+	wpa_printf(MSG_ERROR, "%s: shikew_be entering ifname=%s force_ifname=%s %d",__func__,ifname, force_ifname, __LINE__);
 
 	if (addr)
 		os_memcpy(if_addr, addr, ETH_ALEN);
@@ -8746,17 +8781,26 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 			   ifname,
 			   (long long unsigned int) p2pdev_info.wdev_id);
 	} else {
+	
+		wpa_printf(MSG_ERROR, "%s: shikew_be ifname=%s use_existing=%d %d",__func__, ifname, use_existing, __LINE__);
 		ifidx = nl80211_create_iface(bss, drv, ifname, nlmode, addr,
 					     0, NULL, NULL, use_existing);
 		if (use_existing && ifidx == -ENFILE) {
 			added = 0;
 			ifidx = if_nametoindex(ifname);
+			
+			wpa_printf(MSG_ERROR, "%s: shikew_be entering ifname=%s force_ifname=%s ifidx=%d added=0 %d",
+				__func__,ifname, force_ifname, ifidx, __LINE__);
 		} else if (ifidx < 0) {
+			wpa_printf(MSG_ERROR, "%s: shikew_be entering ifname=%s force_ifname=%s ifidx=%d added=0 %d",
+				__func__,ifname, force_ifname, ifidx, __LINE__);
 			return -1;
 		}
 	}
 
 	if (!addr) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 		if (nlmode == NL80211_IFTYPE_P2P_DEVICE)
 			os_memcpy(if_addr, bss->addr, ETH_ALEN);
 		else if (linux_get_ifhwaddr(drv->global->ioctl_sock,
@@ -8766,6 +8810,7 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 			return -1;
 		}
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	if (!addr &&
 	    (type == WPA_IF_P2P_CLIENT || type == WPA_IF_P2P_GROUP ||
@@ -8778,6 +8823,8 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 				       new_addr) < 0) {
 			if (added)
 				nl80211_remove_iface(drv, ifidx);
+			
+			wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 			return -1;
 		}
 		if (nl80211_addr_in_use(drv->global, new_addr)) {
@@ -8788,6 +8835,8 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 					nl80211_remove_iface(drv, ifidx);
 				return -1;
 			}
+			
+			wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 			if (linux_set_ifhwaddr(drv->global->ioctl_sock, ifname,
 					       new_addr) < 0) {
 				if (added)
@@ -8801,6 +8850,7 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 	if (type == WPA_IF_AP_BSS && setup_ap) {
 		struct i802_bss *new_bss = os_zalloc(sizeof(*new_bss));
 		unsigned int i;
+		wpa_printf(MSG_ERROR, "%s: shikew_be new_bss=%p %d",__func__, new_bss, __LINE__);
 
 		if (new_bss == NULL) {
 			if (added)
@@ -8822,12 +8872,14 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 			os_free(new_bss);
 			return -1;
 		}
+		wpa_printf(MSG_ERROR, "%s: shikew_be ifname=%s drv->global->ioctl_sock=%d %d",__func__, ifname, drv->global->ioctl_sock, __LINE__);
 
 		if (linux_set_iface_flags(drv->global->ioctl_sock, ifname, 1))
 		{
 			if (added)
 				nl80211_remove_iface(drv, ifidx);
 			os_free(new_bss);
+			wpa_printf(MSG_ERROR, "%s: shikew_be ifname=%s error return %d",__func__, ifname, __LINE__);
 			return -1;
 		}
 		os_strlcpy(new_bss->ifname, ifname, IFNAMSIZ);
@@ -8837,6 +8889,8 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 		new_bss->next = drv->first_bss->next;
 		new_bss->flink = &new_bss->links[0];
 		new_bss->n_links = 1;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be set new_bss->flink %d",__func__, __LINE__);
 		os_memcpy(new_bss->flink->addr, new_bss->addr, ETH_ALEN);
 
 		new_bss->flink->freq = drv->first_bss->flink->freq;
@@ -8854,6 +8908,7 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 
 	if (drv->global)
 		drv->global->if_add_ifindex = ifidx;
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	/*
 	 * Some virtual interfaces need to process EAPOL packets and events on
@@ -8865,6 +8920,8 @@ static int wpa_driver_nl80211_if_add(void *priv, enum wpa_driver_if_type type,
 	     nlmode == NL80211_IFTYPE_WDS ||
 	     nlmode == NL80211_IFTYPE_MONITOR))
 		add_ifidx(drv, ifidx, IFIDX_ANY);
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be exiting ifname=%s force_ifname=%s %d",__func__,ifname, force_ifname, __LINE__);
 
 	return 0;
 }
@@ -8990,6 +9047,8 @@ static int nl80211_send_frame_cmd(struct i802_bss *bss,
 				 csa_offs_len * sizeof(u16), csa_offs)) ||
 	    nla_put(msg, NL80211_ATTR_FRAME, buf_len, buf))
 		goto fail;
+
+	wpa_printf(MSG_ERROR, "%s: shikew_be NL80211_CMD_FRAME %d",__func__, __LINE__);
 
 	cookie = 0;
 	ret = send_and_recv_msgs(drv, msg, cookie_handler, &cookie, NULL, NULL);
@@ -10886,6 +10945,8 @@ static int driver_nl80211_send_mlme(void *priv, const u8 *data,
 				    int link_id)
 {
 	struct i802_bss *bss = priv;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be link_id=%d %d",__func__, link_id, __LINE__);
 	return wpa_driver_nl80211_send_mlme(bss, data, data_len, noack,
 					    freq, 0, 0, wait, csa_offs,
 					    csa_offs_len, no_encrypt, link_id);
@@ -13976,6 +14037,8 @@ static int nl80211_link_add(void *priv, u8 link_id, const u8 *addr)
 	} else {
 		idx = bss->n_links;
 	}
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be NL80211_CMD_ADD_LINK=%d %d",__func__, NL80211_CMD_ADD_LINK, __LINE__);
 
 	msg = nl80211_drv_msg(drv, 0, NL80211_CMD_ADD_LINK);
 	if (!msg ||
@@ -13989,7 +14052,19 @@ static int nl80211_link_add(void *priv, u8 link_id, const u8 *addr)
 	if (ret) {
 		wpa_printf(MSG_DEBUG, "nl80211: add link failed. ret=%d (%s)",
 			   ret, strerror(-ret));
-		return ret;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be HARDCODE NL80211_CMD_ADD_LINK force return succ %d",__func__, __LINE__);
+		wpa_printf(MSG_ERROR, "%s: shikew_be HARDCODE NL80211_CMD_ADD_LINK=%d %d",__func__, NL80211_CMD_ADD_LINK, __LINE__);
+		wpa_printf(MSG_ERROR, "%s: shikew_be HARDCODE NL80211_CMD_REMOVE_LINK=%d %d",__func__,NL80211_CMD_REMOVE_LINK, __LINE__);
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be HARDCODE NL80211_CMD_ADD_LINK_STA=%d %d",__func__, NL80211_CMD_ADD_LINK_STA, __LINE__);
+		wpa_printf(MSG_ERROR, "%s: shikew_be HARDCODE NL80211_CMD_MODIFY_LINK_STA=%d %d",__func__,NL80211_CMD_MODIFY_LINK_STA, __LINE__);
+		wpa_printf(MSG_ERROR, "%s: shikew_be HARDCODE NL80211_CMD_REMOVE_LINK_STA=%d %d",__func__, NL80211_CMD_REMOVE_LINK_STA, __LINE__);
+		wpa_printf(MSG_ERROR, "%s: shikew_be HARDCODE NL80211_CMD_SET_HW_TIMESTAMP=%d %d",__func__,NL80211_CMD_SET_HW_TIMESTAMP, __LINE__);
+
+		
+		if (0)
+			return ret;
 	}
 
 	bss->links[idx].link_id = link_id;

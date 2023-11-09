@@ -932,6 +932,10 @@ static int wiphy_info_handler(struct nl_msg *msg, void *arg)
 		capa->max_scan_ssids =
 			nla_get_u8(tb[NL80211_ATTR_MAX_NUM_SCAN_SSIDS]);
 
+	wpa_printf(MSG_ERROR, "%s: shikew_be HARDCODE drv->capa.flags2 |= WPA_DRIVER_FLAGS2_MLO %d",__func__, __LINE__);
+
+	drv->capa.flags2 |= WPA_DRIVER_FLAGS2_MLO;
+
 	if (tb[NL80211_ATTR_MAX_NUM_SCHED_SCAN_SSIDS])
 		capa->max_sched_scan_ssids =
 			nla_get_u8(tb[NL80211_ATTR_MAX_NUM_SCHED_SCAN_SSIDS]);
@@ -1189,6 +1193,7 @@ static int wpa_driver_nl80211_get_info(struct wpa_driver_nl80211_data *drv,
 		nlmsg_free(msg);
 		return -1;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_be NL80211_CMD_GET_WIPHY %d",__func__, __LINE__);
 
 	if (send_and_recv_msgs(drv, msg, wiphy_info_handler, info, NULL, NULL))
 		return -1;
@@ -1885,6 +1890,11 @@ static int phy_info_rates(struct hostapd_hw_modes *mode, struct nlattr *tb)
 	return NL_OK;
 }
 
+static u16 scm2020_mac_cap = 0xC200;
+static u16 scm2020_phy_cap[EHT_PHY_CAPAB_LEN] = {0x2c, 0x00, 0x1b, 0xe0, 0x00, 0xef, 0x00, 0xe0, 0x00};
+static u16 scm2020_mcs[EHT_MCS_NSS_CAPAB_LEN] = {0x44, 0x44, 0x44, 0x44, 0x44, 0x44};
+static u16 scm2020_ppet[EHT_PPE_THRESH_CAPAB_LEN] = {0xf3, 0x70, 0x1c, 0xc7, 0x71, 0x1c, 0xc7, 0x71, 0x1c, 0xc7, 0x71, 0x1c, 0xc7, 0x01};
+
 
 static void phy_info_iftype_copy(struct hostapd_hw_modes *mode,
 				 enum ieee80211_op_mode opmode,
@@ -1894,6 +1904,8 @@ static void phy_info_iftype_copy(struct hostapd_hw_modes *mode,
 	size_t len;
 	struct he_capabilities *he_capab = &mode->he_capab[opmode];
 	struct eht_capabilities *eht_capab = &mode->eht_capab[opmode];
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d %d",__func__, opmode, __LINE__);
 
 	switch (opmode) {
 	case IEEE80211_MODE_INFRA:
@@ -1912,9 +1924,13 @@ static void phy_info_iftype_copy(struct hostapd_hw_modes *mode,
 		return;
 	}
 
-	if (!nla_get_flag(tb_flags[iftype]))
-		return;
+	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d tb_flags[%d]=%d %d",
+		__func__, opmode, iftype, tb_flags[iftype], __LINE__);
 
+	if (!nla_get_flag(tb_flags[iftype])) {
+		wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d tb_flags[%d]=%d not set %d",__func__, opmode, iftype, tb_flags[iftype], __LINE__);
+		return;
+	}
 	he_capab->he_supported = 1;
 
 	if (tb[NL80211_BAND_IFTYPE_ATTR_HE_CAP_PHY]) {
@@ -1963,12 +1979,33 @@ static void phy_info_iftype_copy(struct hostapd_hw_modes *mode,
 		capa = nla_get_u16(tb[NL80211_BAND_IFTYPE_ATTR_HE_6GHZ_CAPA]);
 		he_capab->he_6ghz_capa = le_to_host16(capa);
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d EHT_CAP_MAC=%p/EHT_CAP_PHY=%p %d",
+		__func__,opmode,
+		tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC],
+		tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY],
+		__LINE__);
 
 	if (!tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC] ||
-	    !tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY])
+	    !tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY]) {
+	    
+		wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d NO NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC/NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY set %d",
+			__func__, opmode, __LINE__);
+		wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d force set eht_capab %d",
+			__func__, opmode, __LINE__);
+		/*
+		eht_capab->eht_supported = true;
+		eht_capab->mac_cap = scm2020_mac_cap;
+		memcpy(eht_capab->phy_cap, scm2020_phy_cap, EHT_PHY_CAPAB_LEN);
+		memcpy(eht_capab->mcs, scm2020_mcs, EHT_MCS_NSS_CAPAB_LEN);
+		memcpy(eht_capab->ppet, scm2020_ppet, EHT_PPE_THRESH_CAPAB_LEN);
+		*/
 		return;
+	}
 
 	eht_capab->eht_supported = true;
+	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d eht_supported %d",
+		__func__,opmode,
+		__LINE__);
 
 	if (tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC] &&
 	    nla_len(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC]) >= 2) {
@@ -1976,6 +2013,9 @@ static void phy_info_iftype_copy(struct hostapd_hw_modes *mode,
 
 		    pos = nla_data(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MAC]);
 		    eht_capab->mac_cap = WPA_GET_LE16(pos);
+			wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d mac_cap=0x%x eht_supported %d",
+				__func__,opmode,eht_capab->mac_cap,
+				__LINE__);
 	}
 
 	if (tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY]) {
@@ -1985,6 +2025,13 @@ static void phy_info_iftype_copy(struct hostapd_hw_modes *mode,
 		os_memcpy(eht_capab->phy_cap,
 			  nla_data(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PHY]),
 			  len);
+		wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d EHT_CAP_PHY=%02x-%02x-%02x-%02x eht_supported %d",
+			__func__,opmode,
+			eht_capab->phy_cap[0],
+			eht_capab->phy_cap[1],
+			eht_capab->phy_cap[2],
+			eht_capab->phy_cap[3],
+			__LINE__);
 	}
 
 	if (tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_MCS_SET]) {
@@ -2004,6 +2051,7 @@ static void phy_info_iftype_copy(struct hostapd_hw_modes *mode,
 			  nla_data(tb[NL80211_BAND_IFTYPE_ATTR_EHT_CAP_PPE]),
 			  len);
 	}
+
 }
 
 
@@ -2588,13 +2636,33 @@ static void nl80211_dump_chan_list(struct wpa_driver_nl80211_data *drv,
 	if (!modes)
 		return;
 
+	wpa_printf(MSG_ERROR, "%s: shikew_be num_modes=%d %d",__func__, num_modes, __LINE__);
+
 	for (i = 0; i < num_modes; i++) {
 		struct hostapd_hw_modes *mode = &modes[i];
 		char str[1000];
 		char *pos = str;
 		char *end = pos + sizeof(str);
 		int j, res;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be index=%d mode=%d %d",__func__, i, mode->mode, __LINE__);
+		wpa_printf(MSG_ERROR, "%s: shikew_be IEEE80211_MODE_INFRA=%d IEEE80211_MODE_IBSS=%d %d",__func__, 
+			mode->eht_capab[IEEE80211_MODE_INFRA].eht_supported, 
+			mode->eht_capab[IEEE80211_MODE_IBSS].eht_supported, 
+			__LINE__);
+		wpa_printf(MSG_ERROR, "%s: shikew_be IEEE80211_MODE_INFRA=%d IEEE80211_MODE_IBSS=%d %d",__func__, 
+			mode->eht_capab[IEEE80211_MODE_AP].eht_supported, 
+			mode->eht_capab[IEEE80211_MODE_MESH].eht_supported, 
+			__LINE__);
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be force eht_supported to 1 %d",__func__, 
+			__LINE__);
+		mode->eht_capab[IEEE80211_MODE_INFRA].eht_supported = 1;
+		mode->eht_capab[IEEE80211_MODE_IBSS].eht_supported = 1;
+		mode->eht_capab[IEEE80211_MODE_AP].eht_supported = 1;
+		mode->eht_capab[IEEE80211_MODE_MESH].eht_supported = 1;
 
+		
 		for (j = 0; j < mode->num_channels; j++) {
 			struct hostapd_channel_data *chan = &mode->channels[j];
 
@@ -2643,6 +2711,7 @@ nl80211_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags,
 	*num_modes = 0;
 	*flags = 0;
 	*dfs_domain = 0;
+	wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
 
 	feat = get_nl80211_protocol_features(drv);
 	if (feat & NL80211_PROTOCOL_FEATURE_SPLIT_WIPHY_DUMP)

@@ -1948,7 +1948,12 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 #endif /* CONFIG_IEEE80211AX */
 
 #ifdef CONFIG_IEEE80211BE
+	wpa_printf(MSG_ERROR, "%s: shikew_be hapd->iconf->ieee80211be=%d hapd->conf->disable_11be=%d",
+		__func__, hapd->iconf->ieee80211be, hapd->conf->disable_11be);
+
 	if (hapd->iconf->ieee80211be && !hapd->conf->disable_11be) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_be hapd->conf->mld_ap=%d",__func__, hapd->conf->mld_ap);
 		if (hapd->conf->mld_ap)
 			tailpos = hostapd_eid_eht_basic_ml(hapd, tailpos, NULL,
 							   true);

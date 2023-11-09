@@ -59,13 +59,19 @@ class HWSimRadio(object):
         self._use_chanctx = use_chanctx
         self._use_p2p_dev = use_p2p_device
         self._use_mlo = use_mlo
+        print("HWSimRadio __enter__")
+
 
     def __enter__(self):
+        print("HWSimRadio __enter__")
+        print("HWSimRadio self._n_channels{0}".format(self._n_channels))
         self._radio_id = self._controller.create_radio(
               n_channels=self._n_channels,
               use_chanctx=self._use_chanctx,
               use_p2p_device=self._use_p2p_dev,
               use_mlo=self._use_mlo)
+        print("HWSimRadio __enter__")
+
         if self._radio_id < 0:
             raise Exception("Failed to create radio (err:%d)" % self._radio_id)
         try:
@@ -74,10 +80,9 @@ class HWSimRadio(object):
             self._controller.destroy_radio(self._radio_id)
             raise e
         return self._radio_id, iface
-
     def __exit__(self, type, value, traceback):
         self._controller.destroy_radio(self._radio_id)
-
+        print("HWSimRadio __exit__")
 
 def create(args):
     print('Created radio %d' % c.create_radio(n_channels=args.channels,

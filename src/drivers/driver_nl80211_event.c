@@ -1361,6 +1361,7 @@ static void mlme_event_mgmt(struct i802_bss *bss,
 	event.rx_mgmt.ssi_signal = ssi_signal;
 	event.rx_mgmt.drv_priv = bss;
 	event.rx_mgmt.link_id = link_id;
+	wpa_printf(MSG_ERROR, "%s: shikew_be link_id=%d %d",__func__, link_id, __LINE__);
 
 	wpa_supplicant_event(drv->ctx, EVENT_RX_MGMT, &event);
 }
@@ -1659,11 +1660,18 @@ static void mlme_event(struct i802_bss *bss,
 	 * finding a match based on the frequency. */
 	if (link)
 		mld_link = nl80211_get_link(bss, nla_get_u8(link));
-	else if (freq)
+	else if (freq) {
 		mld_link = nl80211_get_mld_link_by_freq(bss, nla_get_u32(freq));
+		wpa_printf(MSG_ERROR, "%s: shikew_be freq=%d  %d",__func__, freq, __LINE__);
+	}
 
 	if (mld_link)
 		link_id = mld_link->link_id;
+
+	wpa_printf(MSG_ERROR, "%s: shikew_be __NL80211_ATTR_AFTER_LAST=%d NUM_NL80211_ATTR=%d NL80211_ATTR_MAX=%d NL80211_ATTR_MLO_LINK_ID=%d %d",
+	__func__, __NL80211_ATTR_AFTER_LAST, NUM_NL80211_ATTR, NL80211_ATTR_MAX, NL80211_ATTR_MLO_LINK_ID, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_be link=%p freq=%p link_id=%d %d",__func__, link, freq, link_id, __LINE__);
+	
 
 	data = nla_data(frame);
 	len = nla_len(frame);

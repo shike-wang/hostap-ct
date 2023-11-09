@@ -99,13 +99,22 @@ static u8 ieee80211_eht_mcs_set_size(enum hostapd_hw_mode mode, u8 opclass,
 	return sz;
 }
 
+const char *op_mode_names[] = {
+	"IEEE80211_MODE_INFRA",
+	"IEEE80211_MODE_IBSS",
+	"IEEE80211_MODE_AP",
+	"unknown3",
+	"unknown4",
+	"IEEE80211_MODE_MESH",
 
+};
 size_t hostapd_eid_eht_capab_len(struct hostapd_data *hapd,
 				 enum ieee80211_op_mode opmode)
 {
 	struct hostapd_hw_modes *mode;
 	struct eht_capabilities *eht_cap;
 	size_t len = 3 + 2 + EHT_PHY_CAPAB_LEN;
+	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%s %d",__func__, op_mode_names[opmode], __LINE__);
 
 	mode = hapd->iface->current_mode;
 	if (!mode)
@@ -119,8 +128,10 @@ size_t hostapd_eid_eht_capab_len(struct hostapd_data *hapd,
 					  hapd->iconf->he_oper_chwidth,
 					  mode->he_capab[opmode].phy_cap,
 					  eht_cap->phy_cap);
+	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d len=%d %d",__func__, opmode, len, __LINE__);
 	len += ieee80211_eht_ppet_size(WPA_GET_LE16(&eht_cap->ppet[0]),
 				       eht_cap->phy_cap);
+	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d len=%d %d",__func__, opmode, len, __LINE__);
 
 	return len;
 }
@@ -135,6 +146,8 @@ u8 * hostapd_eid_eht_capab(struct hostapd_data *hapd, u8 *eid,
 	size_t mcs_nss_len, ppe_thresh_len;
 	u8 *pos = eid, *length_pos;
 
+	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%d",__func__, opmode);
+
 	mode = hapd->iface->current_mode;
 	if (!mode)
 		return eid;
@@ -146,6 +159,7 @@ u8 * hostapd_eid_eht_capab(struct hostapd_data *hapd, u8 *eid,
 	*pos++ = WLAN_EID_EXTENSION;
 	length_pos = pos++;
 	*pos++ = WLAN_EID_EXT_EHT_CAPABILITIES;
+	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%s add EID-255 eht-cap[%d] %d",__func__, op_mode_names[opmode], WLAN_EID_EXT_EHT_CAPABILITIES, __LINE__);
 
 	cap = (struct ieee80211_eht_capabilities *) pos;
 	os_memset(cap, 0, sizeof(*cap));
@@ -430,6 +444,7 @@ u8 * hostapd_eid_eht_basic_ml(struct hostapd_data *hapd, u8 *eid,
 	size_t len, slice_len;
 	u8 link_id;
 	u8 common_info_len;
+	wpa_printf(MSG_ERROR, "%s: shikew_be include_mld_id=%d",__func__, include_mld_id);
 
 	/*
 	 * As the Multi-Link element can exceed the size of 255 bytes need to

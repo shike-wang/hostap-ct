@@ -43,6 +43,8 @@ int linux_set_iface_flags(int sock, const char *ifname, int dev_up)
 			return 0;
 		ifr.ifr_flags &= ~IFF_UP;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_be ifname=%s dev_up=%d %d",__func__, ifname, dev_up, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_be ifr.ifr_name=%s dev_up=%d %d",__func__, ifr.ifr_name, dev_up, __LINE__);
 
 	if (ioctl(sock, SIOCSIFFLAGS, &ifr) != 0) {
 		ret = errno ? -errno : -999;
@@ -109,6 +111,7 @@ int linux_set_ifhwaddr(int sock, const char *ifname, const u8 *addr)
 	os_strlcpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	os_memcpy(ifr.ifr_hwaddr.sa_data, addr, ETH_ALEN);
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	wpa_printf(MSG_ERROR, "%s: shikew_be ifname=%s %d",__func__, ifname, __LINE__);
 
 	if (ioctl(sock, SIOCSIFHWADDR, &ifr)) {
 		wpa_printf(MSG_DEBUG, "Could not set interface %s hwaddr: %s",

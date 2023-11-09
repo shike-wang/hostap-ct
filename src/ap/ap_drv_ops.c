@@ -579,6 +579,7 @@ int hostapd_set_freq(struct hostapd_data *hapd, enum hostapd_hw_mode mode,
 {
 	struct hostapd_freq_params data;
 	struct hostapd_hw_modes *cmode = hapd->iface->current_mode;
+	wpa_printf(MSG_ERROR, "%s: shikew_be he_enabled=%d eht_enabled=%d",__func__, he_enabled, eht_enabled);
 
 	if (hostapd_set_freq_params(&data, mode, freq, channel, edmg,
 				    edmg_channel, ht_enabled,
@@ -682,6 +683,8 @@ hostapd_get_hw_feature_data(struct hostapd_data *hapd, u16 *num_modes,
 	if (!hapd->driver || !hapd->driver->get_hw_feature_data ||
 	    !hapd->drv_priv)
 		return NULL;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be call hapd->driver->get_hw_feature_data %d",__func__, __LINE__);
 	return hapd->driver->get_hw_feature_data(hapd->drv_priv, num_modes,
 						 flags, dfs_domain);
 }
