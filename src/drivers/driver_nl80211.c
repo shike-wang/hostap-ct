@@ -5365,6 +5365,7 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 		qca_set_allowed_ap_freqs(drv, params->allowed_freqs,
 					 int_array_len(params->allowed_freqs));
 #endif /* CONFIG_DRIVER_NL80211_QCA */
+	wpa_printf(MSG_DEBUG, "%s: cmd == NL80211_CMD_NEW_BEACON %d", __func__, __LINE__);
 
 	ret = send_and_recv_msgs_connect_handle(drv, msg, bss, 1);
 	if (ret) {
@@ -5547,6 +5548,7 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 	int ret = -ENOBUFS;
 	u8 cmd;
 	const char *cmd_string;
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	if ((params->flags & WPA_STA_TDLS_PEER) &&
 	    !(drv->capa.flags & WPA_DRIVER_FLAGS_TDLS_SUPPORT))
@@ -5569,6 +5571,7 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 	msg = nl80211_bss_msg(bss, 0, cmd);
 	if (!msg)
 		goto fail;
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	/*
 	 * Set the below properties only in one of the following cases:
@@ -5718,6 +5721,7 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 	os_memset(&upd, 0, sizeof(upd));
 	upd.set = sta_flags_nl80211(params->flags);
 	upd.mask = upd.set | sta_flags_nl80211(params->flags_mask);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	/*
 	 * If the driver doesn't support full AP client state, ignore ASSOC/AUTH
@@ -5756,11 +5760,13 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 		}
 #endif /* CONFIG_MESH */
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be ret=%d %d", __func__, ret,__LINE__);
 
 	wpa_printf(MSG_DEBUG, "  * flags set=0x%x mask=0x%x",
 		   upd.set, upd.mask);
 	if (nla_put(msg, NL80211_ATTR_STA_FLAGS2, sizeof(upd), &upd))
 		goto fail;
+	wpa_printf(MSG_ERROR, "%s: shikew_11be ret=%d %d", __func__, ret,__LINE__);
 
 #ifdef CONFIG_MESH
 	if (params->plink_state &&
@@ -5768,6 +5774,7 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 		       sta_plink_state_nl80211(params->plink_state)))
 		goto fail;
 #endif /* CONFIG_MESH */
+	wpa_printf(MSG_ERROR, "%s: shikew_11be ret=%d %d", __func__, ret,__LINE__);
 
 	if ((!params->set || (params->flags & WPA_STA_TDLS_PEER) ||
 	     FULL_AP_CLIENT_STATE_SUPP(drv->capa.flags)) &&
@@ -5784,6 +5791,7 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 			goto fail;
 		nla_nest_end(msg, wme);
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be ret=%d %d", __func__, ret,__LINE__);
 
 	/* In case we are an AP MLD need to always specify the link ID */
 	if (params->mld_link_id >= 0) {
@@ -5816,6 +5824,7 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 		if (nla_put(msg, NL80211_ATTR_MAC, ETH_ALEN, params->addr))
 			goto fail;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be ret=%d %d", __func__, ret,__LINE__);
 
 	ret = send_and_recv_msgs(drv, msg, NULL, NULL, NULL, NULL);
 	msg = NULL;
@@ -5826,7 +5835,9 @@ static int wpa_driver_nl80211_sta_add(void *priv,
 		ret = 0;
 fail:
 	nlmsg_free(msg);
-	return ret;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be ret=%d TODO %d", __func__, ret,__LINE__);
+	return 0;
 }
 
 

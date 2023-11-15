@@ -472,6 +472,7 @@ int hostapd_sta_add(struct hostapd_data *hapd,
 		params.mld_link_sta = mld_link_sta;
 	}
 #endif /* CONFIG_IEEE80211BE */
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	return hapd->driver->sta_add(hapd->drv_priv, &params);
 }

@@ -722,18 +722,24 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 {
 	struct sta_info *sta;
 	int i;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	sta = ap_get_sta(hapd, addr);
 	if (sta)
 		return sta;
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	wpa_printf(MSG_DEBUG, "  New STA");
 	if (hapd->num_sta >= hapd->conf->max_num_sta) {
 		/* FIX: might try to remove some old STAs first? */
 		wpa_printf(MSG_DEBUG, "no more room for new STAs (%d/%d)",
 			   hapd->num_sta, hapd->conf->max_num_sta);
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be NULL %d", __func__, __LINE__);
 		return NULL;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	sta = os_zalloc(sizeof(struct sta_info));
 	if (sta == NULL) {
@@ -743,8 +749,11 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	sta->acct_interim_interval = hapd->conf->acct_interim_interval;
 	if (accounting_sta_get_id(hapd, sta) < 0) {
 		os_free(sta);
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be NULL %d", __func__, __LINE__);
 		return NULL;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	for (i = 0; i < WLAN_SUPP_RATES_MAX; i++) {
 		if (!hapd->iface->basic_rates)
@@ -763,6 +772,7 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 		eloop_register_timeout(hapd->conf->ap_max_inactivity, 0,
 				       ap_handle_timer, hapd, sta);
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	/* initialize STA info data */
 	os_memcpy(sta->addr, addr, ETH_ALEN);
@@ -778,6 +788,7 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	sta_track_claim_taxonomy_info(hapd->iface, addr,
 				      &sta->probe_ie_taxonomy);
 #endif /* CONFIG_TAXONOMY */
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	return sta;
 }
@@ -1613,6 +1624,7 @@ int ap_sta_re_add(struct hostapd_data *hapd, struct sta_info *sta)
 	 * this, station's added_unassoc flag is cleared once the station has
 	 * completed association.
 	 */
+		wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 #ifdef CONFIG_IEEE80211BE
 	if (hapd->conf->mld_ap && sta->mld_info.mld_sta) {
@@ -1622,10 +1634,12 @@ int ap_sta_re_add(struct hostapd_data *hapd, struct sta_info *sta)
 		mld_link_addr = sta->mld_info.links[mld_link_id].peer_addr;
 	}
 #endif /* CONFIG_IEEE80211BE */
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	ap_sta_set_authorized(hapd, sta, 0);
 	hostapd_drv_sta_remove(hapd, sta->addr);
 	sta->flags &= ~(WLAN_STA_ASSOC | WLAN_STA_AUTH | WLAN_STA_AUTHORIZED);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	if (hostapd_sta_add(hapd, sta->addr, 0, 0,
 			    sta->supported_rates,
@@ -1639,6 +1653,7 @@ int ap_sta_re_add(struct hostapd_data *hapd, struct sta_info *sta)
 			       "Could not add STA to kernel driver");
 		return -1;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 
 	sta->added_unassoc = 1;
 	return 0;

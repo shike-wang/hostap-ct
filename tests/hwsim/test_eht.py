@@ -200,8 +200,61 @@ def eht_mld_ap_wpa2_params(ssid, passphrase=None, key_mgmt="WPA-PSK-SHA256",
         params['sae_pwe'] = pwe
 
     return params
-
 def test_eht_mld_discovery(dev, apdev):
+    """EHT MLD AP discovery"""
+    with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface), \
+        HWSimRadio(use_mlo=True) as (wpas_radio, wpas_iface):
+
+        wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
+        wpas.interface_add(wpas_iface)
+
+        ssid = "mld_ap"
+        link0_params = {"ssid": ssid,
+                        "hw_mode": "g",
+                        "channel": "1"}
+        link1_params = {"ssid": ssid,
+                        "hw_mode": "g",
+                        "channel": "2"}
+
+        hapd0 = eht_mld_enable_ap(apdev[0], link0_params)
+        hapd1 = eht_mld_enable_ap(apdev[0], link1_params)
+
+        res = wpas.request("SCAN freq=2412,2417")
+        if "FAIL" in res:
+            raise Exception("Failed to start scan")
+
+        ev = wpas.wait_event(["CTRL-EVENT-SCAN-STARTED"])
+        if ev is None:
+            raise Exception("Scan did not start")
+
+        ev = wpas.wait_event(["CTRL-EVENT-SCAN-RESULTS"])
+        if ev is None:
+            raise Exception("Scan did not complete")
+
+        logger.info("Scan done")
+
+        rnr_pattern = re.compile(".*ap_info.*, mld ID=0, link ID=",
+                                 re.MULTILINE)
+        ml_pattern = re.compile(".*multi-link:.*, MLD ID=0x0", re.MULTILINE)
+
+        bss = wpas.request("BSS " + hapd0.own_addr())
+        logger.info("BSS 0: " + str(bss))
+
+        if rnr_pattern.search(bss) is None:
+            raise Exception("RNR element not found for first link")
+
+        if ml_pattern.search(bss) is None:
+            raise Exception("ML element not found for first link")
+
+        bss = wpas.request("BSS " + hapd1.own_addr())
+        logger.info("BSS 1: " + str(bss))
+
+        if rnr_pattern.search(bss) is None:
+            raise Exception("RNR element not found for second link")
+
+        if ml_pattern.search(bss) is None:
+            raise Exception("ML element not found for second link")
+def test_eht_mld_discovery_ori(dev, apdev):
     """EHT MLD AP discovery"""
     with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface), \
         HWSimRadio(use_mlo=True) as (wpas_radio, wpas_iface):

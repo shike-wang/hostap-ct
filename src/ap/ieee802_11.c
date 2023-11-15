@@ -435,6 +435,7 @@ static int send_auth_reply(struct hostapd_data *hapd, struct sta_info *sta,
 	reply->u.auth.auth_alg = host_to_le16(auth_alg);
 	reply->u.auth.auth_transaction = host_to_le16(auth_transaction);
 	reply->u.auth.status_code = host_to_le16(resp);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be reply->u.auth.status_code=%d %d", __func__, reply->u.auth.status_code, __LINE__);
 
 	if (ies && ies_len)
 		os_memcpy(reply->u.auth.variable, ies, ies_len);
@@ -3059,6 +3060,7 @@ static void handle_auth(struct hostapd_data *hapd,
 
 		sta = ap_sta_add(hapd, sa);
 		if (!sta) {
+			wpa_printf(MSG_ERROR, "%s: shikew_11be ap_sta_add() failed %d", __func__, __LINE__);
 			wpa_printf(MSG_DEBUG, "ap_sta_add() failed");
 			resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
 			goto fail;
@@ -3132,10 +3134,13 @@ static void handle_auth(struct hostapd_data *hapd,
 	    !(hapd->conf->mesh & MESH_ENABLED) &&
 	    !(sta->added_unassoc) && auth_alg != WLAN_AUTH_PASN) {
 		if (ap_sta_re_add(hapd, sta) < 0) {
+			
+			wpa_printf(MSG_ERROR, "%s: shikew_11be %d", __func__, __LINE__);
 			resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
 			goto fail;
 		}
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be NULL %d", __func__, __LINE__);
 
 	switch (auth_alg) {
 	case WLAN_AUTH_OPEN:
@@ -3143,9 +3148,15 @@ static void handle_auth(struct hostapd_data *hapd,
 			       HOSTAPD_LEVEL_DEBUG,
 			       "authentication OK (open system)");
 		sta->flags |= WLAN_STA_AUTH;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be  %d", __func__, __LINE__);
 		wpa_auth_sm_event(sta->wpa_sm, WPA_AUTH);
 		sta->auth_alg = WLAN_AUTH_OPEN;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be  %d", __func__, __LINE__);
 		mlme_authenticate_indication(hapd, sta);
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be  %d", __func__, __LINE__);
 		break;
 #ifdef CONFIG_WEP
 #ifndef CONFIG_NO_RC4
@@ -3240,6 +3251,7 @@ static void handle_auth(struct hostapd_data *hapd,
 		bssid = hapd->mld_addr;
 	}
 #endif /* CONFIG_IEEE80211BE */
+	wpa_printf(MSG_ERROR, "%s: shikew_11be resp=%d %d", __func__, resp, __LINE__);
 
 	reply_res = send_auth_reply(hapd, sta, dst, bssid, auth_alg,
 				    auth_alg == WLAN_AUTH_SAE ?

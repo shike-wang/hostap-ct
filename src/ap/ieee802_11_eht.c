@@ -388,6 +388,11 @@ u16 copy_sta_eht_capab(struct hostapd_data *hapd, struct sta_info *sta,
 {
 	struct hostapd_hw_modes *c_mode = hapd->iface->current_mode;
 	enum hostapd_hw_mode mode = c_mode ? c_mode->mode : NUM_HOSTAPD_MODES;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be he_capab_len=%d eht_capab_len=%d %d", __func__, he_capab_len, eht_capab_len, __LINE__);
+
+	wpa_printf(MSG_ERROR, "%s: shikew_11be iconf->ieee80211be=%d disable_11be=%d %d",
+		__func__, hapd->iconf->ieee80211be, hapd->conf->disable_11be, __LINE__);
 
 	if (!hapd->iconf->ieee80211be || hapd->conf->disable_11be ||
 	    !he_capab || he_capab_len < IEEE80211_HE_CAPAB_MIN_LEN ||
@@ -409,6 +414,8 @@ u16 copy_sta_eht_capab(struct hostapd_data *hapd, struct sta_info *sta,
 		sta->eht_capab_len = 0;
 		return WLAN_STATUS_UNSPECIFIED_FAILURE;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be sta->flags |= WLAN_STA_EHT %d",
+		__func__, __LINE__);
 
 	sta->flags |= WLAN_STA_EHT;
 	sta->eht_capab_len = eht_capab_len;

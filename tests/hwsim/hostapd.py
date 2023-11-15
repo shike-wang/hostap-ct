@@ -155,14 +155,17 @@ class Hostapd:
             self.ctrl = wpaspy.Ctrl(os.path.join(ctrl, ifname))
             self.mon = wpaspy.Ctrl(os.path.join(ctrl, ifname))
             self.dbg = ifname
+            print("Hostapd:ifname {0} hostname {1} port {2}".format(self.ifname, self.hostname, port))
         else:
             self.ctrl = wpaspy.Ctrl(hostname, port)
             self.mon = wpaspy.Ctrl(hostname, port)
             self.dbg = hostname + "/" + ifname
+            print("Hostapd:ifname {0} hostname {1} port {2}".format(self.ifname, self.hostname, port))
         self.mon.attach()
         self.bssid = None
         self.bssidx = bssidx
         self.mld_addr = None
+        print("Hostapd:ifname {0} hostname {1} port {2}".format(self.ifname, self.hostname, port))
 
     def cmd_execute(self, cmd_array, shell=False):
         if self.hostname is None:
@@ -627,6 +630,7 @@ def add_ap(apdev, params, wait_enabled=True, no_enable=False, timeout=30,
         hapd_global.add(ifname, driver=driver)
         port = hapd_global.get_ctrl_iface_port(ifname)
         hapd = Hostapd(ifname, hostname=hostname, port=port)
+        print("ifname {0} hostname {1} port {2}".format(ifname, hostname, port))
         if not hapd.ping():
             raise Exception("Could not ping hostapd")
         hapd.set_defaults(set_channel=set_channel)

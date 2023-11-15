@@ -54,7 +54,7 @@ class HWSimController(object):
 class HWSimRadio(object):
     def __init__(self, n_channels=None, use_chanctx=False,
                  use_p2p_device=False, use_mlo=False):
-        self._controller = HWSimController()
+        #self._controller = HWSimController()
         self._n_channels = n_channels
         self._use_chanctx = use_chanctx
         self._use_p2p_dev = use_p2p_device
@@ -65,6 +65,10 @@ class HWSimRadio(object):
     def __enter__(self):
         print("HWSimRadio __enter__")
         print("HWSimRadio self._n_channels{0}".format(self._n_channels))
+        radio = 5
+        ifcace = "wlan5"
+        return radio, ifcace
+        '''
         self._radio_id = self._controller.create_radio(
               n_channels=self._n_channels,
               use_chanctx=self._use_chanctx,
@@ -80,6 +84,7 @@ class HWSimRadio(object):
             self._controller.destroy_radio(self._radio_id)
             raise e
         return self._radio_id, iface
+        '''
     def __exit__(self, type, value, traceback):
         self._controller.destroy_radio(self._radio_id)
         print("HWSimRadio __exit__")
