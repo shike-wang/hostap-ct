@@ -7140,9 +7140,11 @@ static size_t hostapd_eid_nr_db_len(struct hostapd_data *hapd,
 {
 	struct hostapd_neighbor_entry *nr;
 	size_t total_len = 0, len = *current_len;
-
+	SENSCOMM_FUNC_ENTER();
 	dl_list_for_each(nr, &hapd->nr_db, struct hostapd_neighbor_entry,
 			 list) {
+		wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d len=%d total_len=%d %d",
+			__func__, hapd->mld_link_id, len, total_len, __LINE__);
 		if (!nr->nr || wpabuf_len(nr->nr) < 12)
 			continue;
 
@@ -7158,9 +7160,14 @@ static size_t hostapd_eid_nr_db_len(struct hostapd_data *hapd,
 
 		len += RNR_TBTT_HEADER_LEN + RNR_TBTT_INFO_LEN;
 		total_len += RNR_TBTT_HEADER_LEN + RNR_TBTT_INFO_LEN;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d len=%d total_len=%d %d",
+			__func__, hapd->mld_link_id, len, total_len, __LINE__);
 	}
 
 	*current_len = len;
+	
+	SENSCOMM_FUNC_EXIT();
 	return total_len;
 }
 
@@ -7181,9 +7188,13 @@ hostapd_eid_rnr_iface_len(struct hostapd_data *hapd,
 	size_t i, start = 0;
 	bool ap_mld = false;
 
+	SENSCOMM_FUNC_ENTER();
 #ifdef CONFIG_IEEE80211BE
 	ap_mld = !!hapd->conf->mld_ap;
 #endif /* CONFIG_IEEE80211BE */
+
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->iface->num_bss=%d hapd->conf->active_local_bss=%d %d\n",
+		__func__, hapd->iface->num_bss, hapd->conf->active_local_bss, __LINE__);
 
 	/* active_local_bss cannot be used in conjunction with peer bss */
 	while (start < hapd->iface->num_bss && !hapd->conf->active_local_bss) {
@@ -7192,6 +7203,8 @@ hostapd_eid_rnr_iface_len(struct hostapd_data *hapd,
 			len = RNR_HEADER_LEN;
 			total_len += RNR_HEADER_LEN;
 		}
+		wpa_printf(MSG_ERROR, "%s: shikew_11be start=%d hapd->iface->num_bss=%d len=%d total_len=%d %d\n",
+			__func__, start, hapd->iface->num_bss, len, total_len, __LINE__);
 
 		len += RNR_TBTT_HEADER_LEN;
 		total_len += RNR_TBTT_HEADER_LEN;
@@ -7224,6 +7237,9 @@ hostapd_eid_rnr_iface_len(struct hostapd_data *hapd,
 			tbtt_count++;
 		}
 		start = i;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be start=%d hapd->iface->num_bss=%d len=%d total_len=%d %d\n",
+			__func__, start, hapd->iface->num_bss, len, total_len, __LINE__);
 	}
 
 	/* And specifically configured peers not in this hostapd instance */
@@ -7231,9 +7247,16 @@ hostapd_eid_rnr_iface_len(struct hostapd_data *hapd,
 	while (start < MAX_LOCAL_BSS_INFO) {
 
 		struct hostapd_local_bss_info *local_bss = &hapd->conf->local_bss_info[start];
+		wpa_printf(MSG_ERROR, "%s: shikew_11be start=%d MAX_LOCAL_BSS_INFO=%d %d\n",
+			__func__, start, MAX_LOCAL_BSS_INFO, __LINE__);
 
-		if (is_zero_ether_addr(local_bss->own_addr))
-			continue;
+		if (is_zero_ether_addr(local_bss->own_addr)) {
+			wpa_printf(MSG_ERROR, "%s: shikew_11be start=%d MAX_LOCAL_BSS_INFO=%d local_bss->own_addr=0 %d\n",
+				__func__, start, MAX_LOCAL_BSS_INFO, __LINE__);
+			wpa_printf(MSG_ERROR, "%s: shikew_11be start=%d TODO local_bss->own_addr=0 %d\n",
+				__func__, start, __LINE__);
+			break;
+		}
 
 		if (!len ||
 		    len + RNR_TBTT_HEADER_LEN + RNR_TBTT_INFO_LEN > 255) {
@@ -7260,12 +7283,16 @@ hostapd_eid_rnr_iface_len(struct hostapd_data *hapd,
 			tbtt_count++;
 		}
 		start = i;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be start=%d MAX_LOCAL_BSS_INFO=%d %d\n",
+			__func__, start, MAX_LOCAL_BSS_INFO, __LINE__);
 	}
 
 	if (!tbtt_count)
 		total_len = 0;
 	else
 		*current_len = len;
+	SENSCOMM_FUNC_EXIT();
 
 	return total_len;
 }
@@ -7320,6 +7347,7 @@ static size_t hostapd_eid_rnr_multi_iface_len(struct hostapd_data *hapd,
 	size_t len = 0;
 	size_t i;
 
+	SENSCOMM_FUNC_ENTER();
 	/* Local configured instances */
 	if (hapd->conf && hapd->conf->active_local_bss)
 		len += hostapd_eid_rnr_iface_len(hapd->iface->bss[0], hapd,
@@ -7331,6 +7359,9 @@ static size_t hostapd_eid_rnr_multi_iface_len(struct hostapd_data *hapd,
 	for (i = 0; i < hapd->iface->interfaces->count; i++) {
 		iface = hapd->iface->interfaces->iface[i];
 		bool ap_mld = false;
+		wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d hapd->iface->interfaces->count=%d %d",
+			__func__, hapd->mld_link_id,
+			hapd->iface->interfaces->count, __LINE__);
 
 #ifdef CONFIG_IEEE80211BE
 		if (hapd->conf->mld_ap && iface->bss[0]->conf->mld_ap &&
@@ -7345,7 +7376,7 @@ static size_t hostapd_eid_rnr_multi_iface_len(struct hostapd_data *hapd,
 		len += hostapd_eid_rnr_iface_len(iface->bss[0], hapd,
 						 current_len, NULL);
 	}
-
+	SENSCOMM_FUNC_EXIT();
 	return len;
 }
 
@@ -7355,15 +7386,22 @@ size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type)
 	size_t total_len = 0, current_len = 0;
 	enum colocation_mode mode = get_colocation_mode(hapd);
 	bool ap_mld = false;
-
+	SENSCOMM_FUNC_ENTER();
 #ifdef CONFIG_IEEE80211BE
 	ap_mld = !!hapd->conf->mld_ap;
 #endif /* CONFIG_IEEE80211BE */
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d type=%d %d",
+		__func__, hapd->mld_link_id, type, __LINE__);
 
 	switch (type) {
 	case WLAN_FC_STYPE_BEACON:
-		if (hapd->conf->rnr)
+		wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d type=%d hapd->conf->rnr=%d %d",
+			__func__, hapd->mld_link_id, type, hapd->conf->rnr, __LINE__);
+		if (hapd->conf->rnr) {
 			total_len += hostapd_eid_nr_db_len(hapd, &current_len);
+		}
+		wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d type=%d hapd->conf->rnr=%d %d",
+			__func__, hapd->mld_link_id, type, hapd->conf->rnr, __LINE__);
 		/* fallthrough */
 
 	case WLAN_FC_STYPE_PROBE_RESP:
@@ -7373,10 +7411,14 @@ size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type)
 								&current_len);
 
 		if (((hapd->conf->rnr && hapd->iface->num_bss > 1) || hapd->conf->active_local_bss > 0) &&
-		    !hapd->iconf->mbssid)
+		    !hapd->iconf->mbssid) {
 			total_len += hostapd_eid_rnr_iface_len(hapd, hapd,
 							       &current_len,
 							       NULL);
+		}
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+			__func__, hapd->mld_link_id, __LINE__);
 		break;
 
 	case WLAN_FC_STYPE_ACTION:
@@ -7389,6 +7431,7 @@ size_t hostapd_eid_rnr_len(struct hostapd_data *hapd, u32 type)
 	default:
 		break;
 	}
+	SENSCOMM_FUNC_EXIT();
 
 	return total_len;
 }

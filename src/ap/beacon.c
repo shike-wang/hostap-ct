@@ -1781,6 +1781,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 			tail_len += 256;
 	}
 #endif /* CONFIG_IEEE80211BE */
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d mld_addr="MACSTR" own_addr="MACSTR" %d",
+		__func__, hapd->mld_link_id, MAC2STR(hapd->mld_addr), MAC2STR(hapd->own_addr), __LINE__);
 
 	if (hapd->iconf->mbssid == ENHANCED_MBSSID_ENABLED &&
 	    hapd == hostapd_mbssid_get_tx_bss(hapd))
@@ -1789,6 +1791,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	tail_len += hostapd_mbo_ie_len(hapd);
 	tail_len += hostapd_eid_owe_trans_len(hapd);
 	tail_len += hostapd_eid_dpp_cc_len(hapd);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d tail_len=%d %d",
+		__func__, hapd->mld_link_id, tail_len, __LINE__);
 
 	tailpos = tail = os_malloc(tail_len);
 	if (head == NULL || tail == NULL) {
@@ -1798,6 +1802,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 		return -1;
 	}
 	tailend = tail + tail_len;
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	head->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					   WLAN_FC_STYPE_BEACON);
@@ -1813,6 +1819,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	capab_info = hostapd_own_capab_info(hapd);
 	head->u.beacon.capab_info = host_to_le16(capab_info);
 	pos = &head->u.beacon.variable[0];
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d tail_len=%d %d",
+		__func__, hapd->mld_link_id, tail_len, __LINE__);
 
 	/* SSID */
 	*pos++ = WLAN_EID_SSID;
@@ -1829,6 +1837,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 			  hapd->conf->ssid.ssid_len);
 		pos += hapd->conf->ssid.ssid_len;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	/* Supported rates */
 	pos = hostapd_eid_supp_rates(hapd, pos);
@@ -1842,12 +1852,16 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 
 	/* Power Constraint element */
 	tailpos = hostapd_eid_pwr_constraint(hapd, tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	/* CSA IE */
 	csa_pos = hostapd_eid_csa(hapd, tailpos);
 	if (csa_pos != tailpos)
 		hapd->cs_c_off_beacon = csa_pos - tail - 1;
 	tailpos = csa_pos;
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	/* ERP Information element */
 	tailpos = hostapd_eid_erp_info(hapd, tailpos);
@@ -1860,16 +1874,22 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	tailpos = hostapd_eid_rm_enabled_capab(hapd, tailpos,
 					       tailend - tailpos);
 	tailpos = hostapd_get_mde(hapd, tailpos, tailend - tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	/* eCSA IE */
 	csa_pos = hostapd_eid_ecsa(hapd, tailpos);
 	if (csa_pos != tailpos)
 		hapd->cs_c_off_ecsa_beacon = csa_pos - tail - 1;
 	tailpos = csa_pos;
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	tailpos = hostapd_eid_supported_op_classes(hapd, tailpos);
 	tailpos = hostapd_eid_ht_capabilities(hapd, tailpos);
 	tailpos = hostapd_eid_ht_operation(hapd, tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	if (hapd->iconf->mbssid && hapd->iconf->num_bss > 1) {
 		if (ieee802_11_build_ap_params_mbssid(hapd, params)) {
@@ -1885,6 +1905,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	}
 
 	tailpos = hostapd_eid_ext_capab(hapd, tailpos, complete);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	/*
 	 * TODO: Time Advertisement element should only be included in some
@@ -1895,6 +1917,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	tailpos = hostapd_eid_interworking(hapd, tailpos);
 	tailpos = hostapd_eid_adv_proto(hapd, tailpos);
 	tailpos = hostapd_eid_roaming_consortium(hapd, tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 #ifdef CONFIG_FST
 	if (hapd->iface->fst_ies) {
@@ -1903,6 +1927,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 		tailpos += wpabuf_len(hapd->iface->fst_ies);
 	}
 #endif /* CONFIG_FST */
+wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+	__func__, hapd->mld_link_id, __LINE__);
 
 #ifdef CONFIG_IEEE80211AC
 	if (hapd->iconf->ieee80211ac && !hapd->conf->disable_11ac &&
@@ -1912,6 +1938,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 		tailpos = hostapd_eid_txpower_envelope(hapd, tailpos);
 	}
 #endif /* CONFIG_IEEE80211AC */
+wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+	__func__, hapd->mld_link_id, __LINE__);
 
 #ifdef CONFIG_IEEE80211AX
 	if (hapd->iconf->ieee80211ax && !hapd->conf->disable_11ax &&
@@ -1920,12 +1948,25 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 #endif /* CONFIG_IEEE80211AX */
 
 	tailpos = hostapd_eid_wb_chsw_wrapper(hapd, tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	tailpos = hostapd_eid_rnr(hapd, tailpos, WLAN_FC_STYPE_BEACON);
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 	tailpos = hostapd_eid_fils_indic(hapd, tailpos, 0);
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 	tailpos = hostapd_get_rsnxe(hapd, tailpos, tailend - tailpos);
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 	tailpos = hostapd_eid_mbssid_config(hapd, tailpos,
 					    params->mbssid_elem_count);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 #ifdef CONFIG_IEEE80211AX
 	if (hapd->iconf->ieee80211ax && !hapd->conf->disable_11ax) {
@@ -1946,6 +1987,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 		tailpos = hostapd_eid_he_6ghz_band_cap(hapd, tailpos);
 	}
 #endif /* CONFIG_IEEE80211AX */
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 #ifdef CONFIG_IEEE80211BE
 	wpa_printf(MSG_ERROR, "%s: shikew_be hapd->iconf->ieee80211be=%d hapd->conf->disable_11be=%d",
@@ -1971,6 +2014,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	/* WPA / OSEN */
 	tailpos = hostapd_get_wpa_ie(hapd, tailpos, tailend - tailpos);
 	tailpos = hostapd_get_osen_ie(hapd, tailpos, tailend - tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	/* Wi-Fi Alliance WMM */
 	tailpos = hostapd_eid_wmm(hapd, tailpos);
@@ -2015,6 +2060,8 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 
 	resp = hostapd_probe_resp_offloads(hapd, &resp_len);
 #endif /* NEED_AP_MLME */
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->mld_link_id=%d %d",
+		__func__, hapd->mld_link_id, __LINE__);
 
 	params->head = (u8 *) head;
 	params->head_len = head_len;

@@ -976,6 +976,18 @@ def cfg_mld_link_file(ifname, params):
     f.write("mld_ap=1\n")
     f.write("mld_id=0\n")
 
+    logger.info("shikew channel {}".format(params["channel"]))
+
+#senscomm added rnr_local_bss=00:0a:52:38:84:1b 134 1 0 "ben-7916-6g"
+    if params["channel"] == "1":
+        f.write("bssid=00:0a:52:38:84:1b\n")
+        logger.info("shikew channel 1 {}".format(params["channel"]))
+        f.write("rnr_local_bss=00:0a:52:38:84:1b 134 1 100 \"mld_ap\"\n")
+    else:
+        f.write("bssid=00:0a:52:38:84:1e\n")
+        logger.info("shikew channel 2 {}".format(params["channel"]))
+        f.write("rnr_local_bss=00:0a:52:38:84:1e 134 2 100 \"mld_ap\"\n")
+        
     for k, v in list(params.items()):
         f.write("{}={}\n".format(k,v))
 

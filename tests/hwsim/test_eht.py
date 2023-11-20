@@ -204,7 +204,7 @@ def test_eht_mld_discovery(dev, apdev):
     """EHT MLD AP discovery"""
     with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface), \
         HWSimRadio(use_mlo=True) as (wpas_radio, wpas_iface):
-
+        print("test_eht_mld_discovery")
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
 
@@ -218,7 +218,9 @@ def test_eht_mld_discovery(dev, apdev):
 
         hapd0 = eht_mld_enable_ap(apdev[0], link0_params)
         hapd1 = eht_mld_enable_ap(apdev[0], link1_params)
-
+        time.sleep(5)
+        logger.info(hapd0.own_addr())
+        logger.info("hapd0.own_addr: {0}".format(hapd0.own_addr()))
         res = wpas.request("SCAN freq=2412,2417")
         if "FAIL" in res:
             raise Exception("Failed to start scan")
@@ -230,12 +232,19 @@ def test_eht_mld_discovery(dev, apdev):
         ev = wpas.wait_event(["CTRL-EVENT-SCAN-RESULTS"])
         if ev is None:
             raise Exception("Scan did not complete")
+        logger.info(hapd0.own_addr())
 
         logger.info("Scan done")
-
+        '''
         rnr_pattern = re.compile(".*ap_info.*, mld ID=0, link ID=",
                                  re.MULTILINE)
         ml_pattern = re.compile(".*multi-link:.*, MLD ID=0x0", re.MULTILINE)
+        '''                         
+        rnr_pattern = re.compile("ap_info",
+                                 re.MULTILINE)
+        ml_pattern = re.compile("ap_info", re.MULTILINE)
+
+        logger.info("hapd0.own_addr: {0}".format(hapd0.own_addr()))
 
         bss = wpas.request("BSS " + hapd0.own_addr())
         logger.info("BSS 0: " + str(bss))

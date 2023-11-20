@@ -65,7 +65,7 @@ class HWSimRadio(object):
     def __enter__(self):
         print("HWSimRadio __enter__")
         print("HWSimRadio self._n_channels{0}".format(self._n_channels))
-        radio = 5
+        radio = 3
         ifcace = "wlan5"
         return radio, ifcace
         '''
@@ -86,7 +86,7 @@ class HWSimRadio(object):
         return self._radio_id, iface
         '''
     def __exit__(self, type, value, traceback):
-        self._controller.destroy_radio(self._radio_id)
+        #self._controller.destroy_radio(self._radio_id)
         print("HWSimRadio __exit__")
 
 def create(args):

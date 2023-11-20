@@ -1650,10 +1650,14 @@ static int start_ctrl_iface(struct hostapd_iface *iface)
 {
 	size_t i;
 
+	SENSCOMM_FUNC_ENTER();
 	if (!iface->interfaces || !iface->interfaces->ctrl_iface_init)
 		return 0;
 
 	for (i = 0; i < iface->num_bss; i++) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be iface->num_bss=%d %d\n",
+			__func__, iface->num_bss, __LINE__);
 		struct hostapd_data *hapd = iface->bss[i];
 		if (iface->interfaces->ctrl_iface_init(hapd)) {
 			wpa_printf(MSG_ERROR,
@@ -1662,7 +1666,7 @@ static int start_ctrl_iface(struct hostapd_iface *iface)
 			return -1;
 		}
 	}
-
+	SENSCOMM_FUNC_EXIT();
 	return 0;
 }
 
@@ -2702,6 +2706,9 @@ hostapd_alloc_bss_data(struct hostapd_iface *hapd_iface,
 	if (hapd == NULL)
 		return NULL;
 
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->new_assoc_sta_cb=hostapd_new_assoc_sta %d\n",
+		__func__, __LINE__);
+
 	hapd->new_assoc_sta_cb = hostapd_new_assoc_sta;
 	hapd->iconf = conf;
 	hapd->conf = bss;
@@ -3274,15 +3281,22 @@ static int hostapd_data_alloc(struct hostapd_iface *hapd_iface,
 {
 	size_t i;
 	struct hostapd_data *hapd;
-
+	
+	SENSCOMM_FUNC_ENTER();
 	hapd_iface->bss = os_calloc(conf->num_bss,
 				    sizeof(struct hostapd_data *));
 	if (hapd_iface->bss == NULL)
 		return -1;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be conf->num_bss=%d %d\n",
+		__func__, conf->num_bss, __LINE__);
 
 	for (i = 0; i < conf->num_bss; i++) {
 		hapd = hapd_iface->bss[i] =
 			hostapd_alloc_bss_data(hapd_iface, conf, conf->bss[i]);
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be call hostapd_alloc_bss_data %d\n",
+			__func__, __LINE__);
 		if (hapd == NULL) {
 			while (i > 0) {
 				i--;
@@ -3298,6 +3312,10 @@ static int hostapd_data_alloc(struct hostapd_iface *hapd_iface,
 
 	hapd_iface->conf = conf;
 	hapd_iface->num_bss = conf->num_bss;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd_iface->num_bss = conf->num_bss=%d %d\n",
+		__func__, hapd_iface->num_bss, __LINE__);
+	SENSCOMM_FUNC_EXIT();
 
 	return 0;
 }
@@ -3311,6 +3329,7 @@ int hostapd_add_iface(struct hapd_interfaces *interfaces, char *buf)
 	char *ptr;
 	size_t i, j;
 	const char *conf_file = NULL, *phy_name = NULL;
+	SENSCOMM_FUNC_ENTER();
 
 	if (os_strncmp(buf, "bss_config=", 11) == 0) {
 		char *pos;
@@ -3322,7 +3341,7 @@ int hostapd_add_iface(struct hapd_interfaces *interfaces, char *buf)
 		conf_file = pos;
 		if (!os_strlen(conf_file))
 			return -1;
-		wpa_printf(MSG_ERROR, "%s: shikew_be %d",__func__, __LINE__);
+		wpa_printf(MSG_ERROR, "%s: shikew_11be conf_file=%s %d",__func__, conf_file, __LINE__);
 
 		hapd_iface = hostapd_interface_init_bss(interfaces, phy_name,
 							conf_file, 0);
@@ -3389,8 +3408,13 @@ int hostapd_add_iface(struct hapd_interfaces *interfaces, char *buf)
 		return -1;
 	*ptr++ = '\0';
 
-	if (os_strncmp(ptr, "config=", 7) == 0)
+	if (os_strncmp(ptr, "config=", 7) == 0) {
 		conf_file = ptr + 7;
+		wpa_printf(MSG_ERROR, "%s: shikew_11be conf_file=%s %d\n",
+			__func__, conf_file, __LINE__);
+	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be interfaces->count=%d %d\n",
+		__func__, interfaces->count, __LINE__);
 
 	for (i = 0; i < interfaces->count; i++) {
 		bool mld_ap = false;
@@ -3406,6 +3430,8 @@ int hostapd_add_iface(struct hapd_interfaces *interfaces, char *buf)
 			return -1;
 		}
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_11be call hostapd_iface_alloc %d\n",
+		__func__, __LINE__);
 
 	hapd_iface = hostapd_iface_alloc(interfaces);
 	if (hapd_iface == NULL) {
@@ -3416,16 +3442,25 @@ int hostapd_add_iface(struct hapd_interfaces *interfaces, char *buf)
 	new_iface = hapd_iface;
 
 	if (conf_file && interfaces->config_read_cb) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be call interfaces->config_read_cb conf_file=%s %d\n",
+			__func__, conf_file, __LINE__);
 		conf = interfaces->config_read_cb(conf_file);
-		if (conf && conf->bss)
+		if (conf && conf->bss) {
 			os_strlcpy(conf->bss[0]->iface, buf,
 				   sizeof(conf->bss[0]->iface));
+			wpa_printf(MSG_ERROR, "%s: shikew_11be conf->bss[0]->iface=%s %d\n",
+				__func__, conf->bss[0]->iface, __LINE__);
+		}
 	} else {
 		char *driver = os_strchr(ptr, ' ');
 
 		if (driver)
 			*driver++ = '\0';
 		conf = hostapd_config_alloc(interfaces, buf, ptr, driver);
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be driver=%s %d\n",
+			__func__, driver, __LINE__);
 	}
 
 	if (conf == NULL || conf->bss == NULL) {
@@ -3446,6 +3481,10 @@ int hostapd_add_iface(struct hapd_interfaces *interfaces, char *buf)
 
 	wpa_printf(MSG_INFO, "Add interface '%s'",
 		   hapd_iface->conf->bss[0]->iface);
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be Add interface '%s' %d\n",
+		__func__, hapd_iface->conf->bss[0]->iface, __LINE__);
+	SENSCOMM_FUNC_EXIT();
 
 	return 0;
 
@@ -3478,6 +3517,9 @@ fail:
 		}
 		hostapd_cleanup_iface(hapd_iface);
 	}
+
+	
+	SENSCOMM_FUNC_EXIT();
 	return -1;
 }
 

@@ -4935,7 +4935,12 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 	int line = 0;
 	int errors = 0;
 	size_t i;
-
+	
+	SENSCOMM_FUNC_ENTER();
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be fname=%s %d",
+		__func__, fname, __LINE__);
+	
 	f = fopen(fname, "r");
 	if (f == NULL) {
 		wpa_printf(MSG_ERROR, "Could not open configuration file '%s' "
@@ -4988,6 +4993,9 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 		}
 		*pos = '\0';
 		pos++;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_11be buf=%s %d",
+			__func__, buf, __LINE__);
 		errors += hostapd_config_fill(conf, bss, buf, pos, line);
 	}
 
@@ -5007,7 +5015,7 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 		conf = NULL;
 	}
 #endif /* WPA_IGNORE_CONFIG_ERRORS */
-
+	SENSCOMM_FUNC_EXIT();
 	return conf;
 }
 

@@ -10,6 +10,11 @@
 #define COMMON_H
 
 #include "os.h"
+#define SENSCOMM_FUNC_ENTER() \
+	wpa_printf(MSG_ERROR, "%s: shikew_11be entering %d\n", __func__, __LINE__);
+
+#define SENSCOMM_FUNC_EXIT() \
+	wpa_printf(MSG_ERROR, "%s: shikew_11be exiting %d\n", __func__, __LINE__);
 
 #if defined(__linux__) || defined(__GLIBC__)
 #include <endian.h>

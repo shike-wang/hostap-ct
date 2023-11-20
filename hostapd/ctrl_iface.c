@@ -3952,6 +3952,7 @@ static void hostapd_ctrl_iface_receive(int sock, void *eloop_ctx,
 	unsigned char lcookie[CTRL_IFACE_COOKIE_LEN];
 #endif /* CONFIG_CTRL_IFACE_UDP */
 
+	SENSCOMM_FUNC_ENTER();
 	res = recvfrom(sock, buf, sizeof(buf) - 1, 0,
 		       (struct sockaddr *) &from, &fromlen);
 	if (res < 0) {
@@ -4019,6 +4020,7 @@ done:
 			   strerror(errno));
 	}
 	os_free(reply);
+	SENSCOMM_FUNC_EXIT();
 }
 
 
@@ -4066,6 +4068,11 @@ int hostapd_ctrl_iface_init(struct hostapd_data *hapd)
 	struct addrinfo hints = { 0 }, *res, *saveres;
 	int n;
 
+	SENSCOMM_FUNC_ENTER();
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be CONFIG_CTRL_IFACE_UDP defined %d\n",
+		__func__, __LINE__);
+	
 	if (hapd->ctrl_sock > -1) {
 		wpa_printf(MSG_DEBUG, "ctrl_iface already exists!");
 		return 0;
@@ -4143,6 +4150,7 @@ try_again:
 
 	hapd->msg_ctx = hapd;
 	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
+	SENSCOMM_FUNC_EXIT();
 
 	return 0;
 
@@ -4154,6 +4162,10 @@ fail:
 	struct sockaddr_un addr;
 	int s = -1;
 	char *fname = NULL;
+	SENSCOMM_FUNC_ENTER();
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_11be CONFIG_CTRL_IFACE_UDP NOT defined %d\n",
+		__func__, __LINE__);
 
 	if (hapd->ctrl_sock > -1) {
 		wpa_printf(MSG_DEBUG, "ctrl_iface already exists!");
@@ -4164,6 +4176,9 @@ fail:
 
 	if (hapd->conf->ctrl_interface == NULL)
 		return 0;
+
+	wpa_printf(MSG_ERROR, "%s: shikew_11be hapd->conf->ctrl_interface=%s %d\n",
+		__func__, hapd->conf->ctrl_interface, __LINE__);
 
 	if (mkdir(hapd->conf->ctrl_interface, S_IRWXU | S_IRWXG) < 0) {
 		if (errno == EEXIST) {
@@ -4226,6 +4241,9 @@ fail:
 	fname = hostapd_ctrl_iface_path(hapd);
 	if (fname == NULL)
 		goto fail;
+
+	wpa_printf(MSG_ERROR, "%s: shikew_11be fname=%s %d\n",
+		__func__, fname, __LINE__);
 	os_strlcpy(addr.sun_path, fname, sizeof(addr.sun_path));
 	if (bind(s, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		wpa_printf(MSG_DEBUG, "ctrl_iface bind(PF_UNIX) failed: %s",
@@ -4290,6 +4308,7 @@ fail:
 	}
 	hapd->msg_ctx = hapd;
 	wpa_msg_register_cb(hostapd_ctrl_iface_msg_cb);
+	SENSCOMM_FUNC_EXIT();
 
 	return 0;
 
@@ -4300,6 +4319,8 @@ fail:
 		unlink(fname);
 		os_free(fname);
 	}
+	
+	SENSCOMM_FUNC_EXIT();
 	return -1;
 #endif /* CONFIG_CTRL_IFACE_UDP */
 }
@@ -4353,10 +4374,13 @@ void hostapd_ctrl_iface_deinit(struct hostapd_data *hapd)
 static int hostapd_ctrl_iface_add(struct hapd_interfaces *interfaces,
 				  char *buf)
 {
+	SENSCOMM_FUNC_ENTER();
+
 	if (hostapd_add_iface(interfaces, buf) < 0) {
 		wpa_printf(MSG_ERROR, "Adding interface %s failed", buf);
 		return -1;
 	}
+	SENSCOMM_FUNC_EXIT();
 	return 0;
 }
 
@@ -4772,6 +4796,7 @@ static void hostapd_global_ctrl_iface_receive(int sock, void *eloop_ctx,
 	} else if (os_strcmp(buf, "FLUSH") == 0) {
 		hostapd_ctrl_iface_flush(interfaces);
 	} else if (os_strncmp(buf, "ADD ", 4) == 0) {
+		wpa_printf(MSG_ERROR, "%s: shikew_11be ADD... %d", __func__, __LINE__);
 		if (hostapd_ctrl_iface_add(interfaces, buf + 4) < 0)
 			reply_len = -1;
 	} else if (os_strncmp(buf, "REMOVE ", 7) == 0) {

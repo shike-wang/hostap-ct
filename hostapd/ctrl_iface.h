@@ -17,6 +17,9 @@ void hostapd_global_ctrl_iface_deinit(struct hapd_interfaces *interface);
 #else /* CONFIG_NO_CTRL_IFACE */
 static inline int hostapd_ctrl_iface_init(struct hostapd_data *hapd)
 {
+	wpa_printf(MSG_ERROR, "%s: shikew_11be %d\n",
+		__func__, __LINE__);
+
 	return 0;
 }
 

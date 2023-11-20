@@ -114,7 +114,7 @@ size_t hostapd_eid_eht_capab_len(struct hostapd_data *hapd,
 	struct hostapd_hw_modes *mode;
 	struct eht_capabilities *eht_cap;
 	size_t len = 3 + 2 + EHT_PHY_CAPAB_LEN;
-	wpa_printf(MSG_ERROR, "%s: shikew_be opmode=%s %d",__func__, op_mode_names[opmode], __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_11be opmode=%s %d",__func__, op_mode_names[opmode], __LINE__);
 
 	mode = hapd->iface->current_mode;
 	if (!mode)
