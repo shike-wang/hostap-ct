@@ -246,7 +246,7 @@ class WpaSupplicant:
         self.global_request("INTERFACE_REMOVE " + ifname)
 
     def request(self, cmd, timeout=10):
-        logger.debug(self.dbg + ": CTRL: " + cmd)
+        #logger.debug(self.global_dbg + ": CTRL: " + cmd)
         return self.ctrl.request(cmd, timeout=timeout)
 
     def global_request(self, cmd):

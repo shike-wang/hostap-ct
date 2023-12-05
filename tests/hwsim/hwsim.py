@@ -65,7 +65,7 @@ class HWSimRadio(object):
     def __enter__(self):
         print("HWSimRadio __enter__")
         print("HWSimRadio self._n_channels{0}".format(self._n_channels))
-        radio = 3
+        radio = 5
         ifcace = "wlan5"
         return radio, ifcace
         '''

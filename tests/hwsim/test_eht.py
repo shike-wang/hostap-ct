@@ -205,6 +205,7 @@ def test_eht_mld_discovery(dev, apdev):
     with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface), \
         HWSimRadio(use_mlo=True) as (wpas_radio, wpas_iface):
         print("test_eht_mld_discovery")
+        # 注意supplicant use wlan5，HWSimRadio里面要用wlan5
         wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
         wpas.interface_add(wpas_iface)
 
@@ -263,6 +264,72 @@ def test_eht_mld_discovery(dev, apdev):
 
         if ml_pattern.search(bss) is None:
             raise Exception("ML element not found for second link")
+def test_eht_mld_disc_conn(dev, apdev):
+    """EHT MLD AP discovery"""
+    with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface), \
+        HWSimRadio(use_mlo=True) as (wpas_radio, wpas_iface):
+        print("test_eht_mld_discovery")
+        # 注意supplicant use wlan5，HWSimRadio里面要用wlan5
+        wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
+        wpas.interface_add(wpas_iface)
+
+        ssid = "mld_ap"
+        link0_params = {"ssid": ssid,
+                        "hw_mode": "g",
+                        "channel": "1"}
+        link1_params = {"ssid": ssid,
+                        "hw_mode": "g",
+                        "channel": "2"}
+
+        hapd0 = eht_mld_enable_ap(apdev[0], link0_params)
+        hapd1 = eht_mld_enable_ap(apdev[0], link1_params)
+        time.sleep(5)
+        logger.info(hapd0.own_addr())
+        logger.info("hapd0.own_addr: {0}".format(hapd0.own_addr()))
+        res = wpas.request("SCAN freq=2412,2417")
+        if "FAIL" in res:
+            raise Exception("Failed to start scan")
+
+        ev = wpas.wait_event(["CTRL-EVENT-SCAN-STARTED"])
+        if ev is None:
+            raise Exception("Scan did not start")
+
+        ev = wpas.wait_event(["CTRL-EVENT-SCAN-RESULTS"])
+        if ev is None:
+            raise Exception("Scan did not complete")
+        logger.info(hapd0.own_addr())
+
+        logger.info("Scan done")
+        '''
+        rnr_pattern = re.compile(".*ap_info.*, mld ID=0, link ID=",
+                                 re.MULTILINE)
+        ml_pattern = re.compile(".*multi-link:.*, MLD ID=0x0", re.MULTILINE)
+        '''                         
+        rnr_pattern = re.compile("ap_info",
+                                 re.MULTILINE)
+        ml_pattern = re.compile("ap_info", re.MULTILINE)
+
+        logger.info("hapd0.own_addr: {0}".format(hapd0.own_addr()))
+
+        bss = wpas.request("BSS " + hapd0.own_addr())
+        logger.info("BSS 0: " + str(bss))
+
+        if rnr_pattern.search(bss) is None:
+            raise Exception("RNR element not found for first link")
+
+        if ml_pattern.search(bss) is None:
+            raise Exception("ML element not found for first link")
+
+        bss = wpas.request("BSS " + hapd1.own_addr())
+        logger.info("BSS 1: " + str(bss))
+        #dev[0].connect(ssid, scan_freq="2412", key_mgmt="OWE", ieee80211w="2")
+        wpas.connect(ssid, key_mgmt="OWE", ieee80211w="2", scan_freq="2412")
+
+        if rnr_pattern.search(bss) is None:
+            raise Exception("RNR element not found for second link")
+
+        if ml_pattern.search(bss) is None:
+            raise Exception("ML element not found for second link")            
 def test_eht_mld_discovery_ori(dev, apdev):
     """EHT MLD AP discovery"""
     with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface), \
@@ -401,25 +468,45 @@ def test_eht_mld_owe_two_links(dev, apdev):
 
 def test_eht_mld_sae_single_link(dev, apdev):
     """EHT MLD AP with MLD client SAE H2E connection using single link"""
-    with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface), \
-            HWSimRadio(use_mlo=True) as (wpas_radio, wpas_iface):
-        wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan5')
-        wpas.interface_add(wpas_iface)
+    #with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface), \
+    #        HWSimRadio(use_mlo=True) as (wpas_radio, wpas_iface):
+    wpas = WpaSupplicant(global_iface='/tmp/wpas-wlan0')
+	#wpas.interface_add(wpas_iface)
+    #wpas.interface_add("wlan0")
 
-        passphrase = 'qwertyuiop'
-        ssid = "mld_ap_sae_single_link"
-        params = eht_mld_ap_wpa2_params(ssid, passphrase, key_mgmt="SAE",
-                                        mfp="2", pwe='2')
+    passphrase = 'qwertyuiop'
+    ssid = "mld_ap_sae_single_link"
+    params = eht_mld_ap_wpa2_params(ssid, passphrase, key_mgmt="SAE",
+                                    mfp="2", pwe='2')
 
-        hapd0 = eht_mld_enable_ap(hapd_iface, params)
+    params["channel"] =  "1"
 
-        wpas.set("sae_pwe", "1")
-        wpas.connect(ssid, sae_password=passphrase, scan_freq="2412",
-                     key_mgmt="SAE", ieee80211w="2")
+    #hapd0 = eht_mld_enable_ap(apdev[0], params)
+    hapd0 = hostapd.add_ap(apdev[0], params)
+    logger.info("hapd0.own_addr: {0}".format(hapd0.own_addr()))
+    logger.info("hapd0.own_addr: {0}".format(hapd0.get_status()))
 
-        eht_verify_status(wpas, hapd0, 2412, 20, is_ht=True, mld=True)
-        eht_verify_wifi_version(wpas)
-        traffic_test(wpas, hapd0)
+    #wpas.set("sae_pwe", "1")
+    dev[0].connect(ssid, sae_password=passphrase, scan_freq="2412",
+                 key_mgmt="SAE", ieee80211w="2")
+
+    eht_verify_status(wpas, hapd0, 2412, 20, is_ht=True, mld=True)
+    eht_verify_wifi_version(wpas)
+    traffic_test(wpas, hapd0)
+'''
+def test_eht_mld_sae_single_link(dev, apdev):
+    """EHT MLD AP with MLD client SAE H2E connection using single link"""
+    params = {"ssid": "he",
+              "ieee80211ax": "1",
+              "he_bss_color": "42",
+              "he_mu_edca_ac_be_ecwmin": "7",
+              "he_mu_edca_ac_be_ecwmax": "15"}
+    hapd = hostapd.add_ap(apdev[0], params)
+    if hapd.get_status_field("ieee80211ax") != "1":
+        raise Exception("STATUS did not indicate ieee80211ax=1")
+    dev[0].connect("he", key_mgmt="NONE", scan_freq="2412")
+'''
+
 
 def run_eht_mld_sae_two_links(dev, apdev, beacon_prot="1"):
     with HWSimRadio(use_mlo=True) as (hapd_radio, hapd_iface), \

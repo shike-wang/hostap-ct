@@ -489,6 +489,8 @@ u8 * hostapd_eid_eht_basic_ml(struct hostapd_data *hapd, u8 *eid,
 
 	/* Own MLD MAC Address */
 	wpabuf_put_data(buf, hapd->mld_addr, ETH_ALEN);
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_be mld_mac="MACSTR"\n",__func__, MAC2STR(hapd->mld_addr));
 
 	/* Own Link ID */
 	wpabuf_put_u8(buf, hapd->mld_link_id);

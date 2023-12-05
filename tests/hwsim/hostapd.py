@@ -980,13 +980,13 @@ def cfg_mld_link_file(ifname, params):
 
 #senscomm added rnr_local_bss=00:0a:52:38:84:1b 134 1 0 "ben-7916-6g"
     if params["channel"] == "1":
-        f.write("bssid=00:0a:52:38:84:1b\n")
+        f.write("bssid=64:f9:47:38:84:1b\n")
         logger.info("shikew channel 1 {}".format(params["channel"]))
-        f.write("rnr_local_bss=00:0a:52:38:84:1b 134 1 100 \"mld_ap\"\n")
+        f.write("rnr_local_bss=64:f9:47:38:84:1b 134 1 100 \"{}\"\n".format(params["ssid"]))
     else:
-        f.write("bssid=00:0a:52:38:84:1e\n")
+        f.write("bssid=64:f9:47:38:84:1e\n")
         logger.info("shikew channel 2 {}".format(params["channel"]))
-        f.write("rnr_local_bss=00:0a:52:38:84:1e 134 2 100 \"mld_ap\"\n")
+        f.write("rnr_local_bss=64:f9:47:38:84:1e 134 2 100 \"{}\"\n".format(params["ssid"]))
         
     for k, v in list(params.items()):
         f.write("{}={}\n".format(k,v))
@@ -994,3 +994,44 @@ def cfg_mld_link_file(ifname, params):
     idx = idx + 1
 
     return fname, ctrl_iface
+
+def cfg_mld_link_file_ori(ifname, params):
+    global idx
+    ctrl_iface="/var/run/hostapd"
+    conf = "link-%d.conf" % idx
+
+    fd, fname = tempfile.mkstemp(dir='/tmp', prefix=conf + '-')
+    f = os.fdopen(fd, 'w')
+
+    if idx != 0:
+        ctrl_iface="/var/run/hostapd_%d" % idx
+
+    f.write("ctrl_interface=%s\n" % ctrl_iface)
+    f.write("driver=nl80211\n")
+    f.write("ieee80211n=1\n")
+    f.write("ieee80211ac=1\n")
+    f.write("ieee80211ax=1\n")
+    f.write("ieee80211be=1\n")
+    f.write("interface=%s\n" % ifname)
+    f.write("mld_ap=1\n")
+    f.write("mld_id=0\n")
+
+    logger.info("shikew channel {}".format(params["channel"]))
+
+#senscomm added rnr_local_bss=00:0a:52:38:84:1b 134 1 0 "ben-7916-6g"
+    if params["channel"] == "1":
+        f.write("bssid=64:f9:47:38:84:1b\n")
+        logger.info("cfg_mld_link_file_ori shikew channel 1 {}".format(params["channel"]))
+        f.write("rnr_local_bss=64:f9:47:38:84:1b 134 1 100 \"mld_ap\"\n")
+    else:
+        f.write("bssid=64:f9:47:38:84:1e\n")
+        logger.info("cfg_mld_link_file_ori shikew channel 2 {}".format(params["channel"]))
+        f.write("rnr_local_bss=64:f9:47:38:84:1e 134 2 100 \"mld_ap\"\n")
+        
+    for k, v in list(params.items()):
+        f.write("{}={}\n".format(k,v))
+
+    idx = idx + 1
+
+    return fname, ctrl_iface
+
