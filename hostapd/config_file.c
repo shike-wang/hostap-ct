@@ -655,6 +655,14 @@ static int hostapd_config_parse_key_mgmt(int line, const char *value)
 		*end = '\0';
 		if (os_strcmp(start, "WPA-PSK") == 0)
 			val |= WPA_KEY_MGMT_PSK;
+		else if (os_strcmp(start, "WAPI-PSK") == 0) {
+			val |= WPA_KEY_MGMT_WAPI_PSK;
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi WAPI-PSK val=0x%x", __func__, val);
+		}
+		else if (os_strcmp(start, "WAPI-CERT") == 0) {
+			val |= WPA_KEY_MGMT_WAPI_CERT;
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi WAPI-CERT val=0x%x", __func__, val);
+		}
 		else if (os_strcmp(start, "WPA-EAP") == 0)
 			val |= WPA_KEY_MGMT_IEEE8021X;
 #ifdef CONFIG_IEEE80211R_AP
@@ -2887,6 +2895,7 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		}
 	} else if (os_strcmp(buf, "wpa") == 0) {
 		bss->wpa = atoi(pos);
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi wpa=%d [4: WAPI_PSK 5:WAPI_CERT]", __func__, bss->wpa);
 	} else if (os_strcmp(buf, "extended_key_id") == 0) {
 		int val = atoi(pos);
 
@@ -2977,9 +2986,12 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			return 1;
 		}
 	} else if (os_strcmp(buf, "wpa_key_mgmt") == 0) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi wpa_key_mgmt %d", __func__, __LINE__);
 		bss->wpa_key_mgmt = hostapd_config_parse_key_mgmt(line, pos);
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi bss->wpa_key_mgmt=%d", __func__, bss->wpa_key_mgmt);
 		if (bss->wpa_key_mgmt == -1)
 			return 1;
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi wpa_key_mgmt=%d", __func__, bss->wpa_key_mgmt);
 	} else if (os_strcmp(buf, "wpa_psk_radius") == 0) {
 		bss->wpa_psk_radius = atoi(pos);
 		if (bss->wpa_psk_radius != PSK_RADIUS_IGNORED &&
@@ -2992,6 +3004,7 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			return 1;
 		}
 	} else if (os_strcmp(buf, "wpa_pairwise") == 0) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi wpa_pairwise=%s %d", __func__, buf, __LINE__);
 		bss->wpa_pairwise = hostapd_config_parse_cipher(line, pos);
 		if (bss->wpa_pairwise == -1 || bss->wpa_pairwise == 0)
 			return 1;
@@ -3001,7 +3014,22 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 				   line, pos);
 			return 1;
 		}
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi wpa_pairwise=0x%x %d", __func__, bss->wpa_pairwise, __LINE__);
+	} else if (os_strcmp(buf, "wapi_pairwise") == 0) {
+	
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi wapi_pairwise=%s %d", __func__, buf, __LINE__);
+		bss->wpa_pairwise = hostapd_config_parse_cipher(line, pos);
+		if (bss->wpa_pairwise == -1 || bss->wpa_pairwise == 0)
+			return 1;
+		if (bss->wpa_pairwise &
+		    (WPA_CIPHER_NONE | WPA_CIPHER_WEP40 | WPA_CIPHER_WEP104)) {
+			wpa_printf(MSG_ERROR, "Line %d: unsupported pairwise cipher suite '%s'",
+				   line, pos);
+			return 1;
+		}
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi wpa_pairwise=0x%x %d", __func__, bss->wpa_pairwise, __LINE__);
 	} else if (os_strcmp(buf, "rsn_pairwise") == 0) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi rsn_pairwise=%s %d", __func__, buf, __LINE__);
 		bss->rsn_pairwise = hostapd_config_parse_cipher(line, pos);
 		if (bss->rsn_pairwise == -1 || bss->rsn_pairwise == 0)
 			return 1;
@@ -3011,6 +3039,7 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 				   line, pos);
 			return 1;
 		}
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi rsn_pairwise=0x%x %d", __func__, bss->rsn_pairwise, __LINE__);
 	} else if (os_strcmp(buf, "group_cipher") == 0) {
 		bss->group_cipher = hostapd_config_parse_cipher(line, pos);
 		if (bss->group_cipher == -1 || bss->group_cipher == 0)
@@ -3019,12 +3048,14 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		    bss->group_cipher != WPA_CIPHER_CCMP &&
 		    bss->group_cipher != WPA_CIPHER_GCMP &&
 		    bss->group_cipher != WPA_CIPHER_GCMP_256 &&
+		    bss->group_cipher != WPA_CIPHER_SMS4 &&
 		    bss->group_cipher != WPA_CIPHER_CCMP_256) {
 			wpa_printf(MSG_ERROR,
 				   "Line %d: unsupported group cipher suite '%s'",
 				   line, pos);
 			return 1;
 		}
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi group_cipher=0x%x %d", __func__, bss->group_cipher, __LINE__);
 #ifdef CONFIG_RSN_PREAUTH
 	} else if (os_strcmp(buf, "rsn_preauth") == 0) {
 		bss->rsn_preauth = atoi(pos);

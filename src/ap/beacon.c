@@ -33,6 +33,7 @@
 #include "taxonomy.h"
 #include "ieee802_11_auth.h"
 
+u8 * hostapd_wapi_id_set(struct hostapd_data *hapd, u8 *tailpos);
 
 #ifdef NEED_AP_MLME
 
@@ -737,6 +738,7 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
 #endif /* CONFIG_IEEE80211AX */
 
 	pos = hostapd_eid_wb_chsw_wrapper(hapd, pos);
+	pos = hostapd_wapi_id_set(hapd, pos);
 
 	pos = hostapd_eid_rnr(hapd, pos, WLAN_FC_STYPE_PROBE_RESP);
 	pos = hostapd_eid_fils_indic(hapd, pos, 0);
@@ -1702,7 +1704,75 @@ static u8 * hostapd_fils_discovery(struct hostapd_data *hapd,
 }
 
 #endif /* CONFIG_FILS */
+#define WLAN_EID_WAPI 68 /* note: also used by WAPI */
+#define WAPI_OUI            0x721400
+#define WAPI_VERSION        1   /* current supported version */
 
+/*Cipher suite*/
+#define WAPI_CSE_NULL       0x00 
+#define WAPI_CSE_WPI_SMS4   0x01
+
+/*AKM suite */
+#define WAPI_ASE_NONE     0x00 
+#define WAPI_ASE_WAI_CERT 0x01 //was earlier WAPI_ASE_WAI_UNSPEC    
+#define WAPI_ASE_WAI_PSK  0x02
+#define WAPI_ASE_WAI_AUTO 0x03
+
+u8 * hostapd_wapi_id_set(struct hostapd_data *hapd, u8 *tailpos)
+{
+#define ADDSHORT(frm, v) do {frm[0] = (v) & 0xff;frm[1] = (v) >> 8;frm += 2;} while (0)
+#define ADDSELECTOR(frm, sel) do {memcpy(frm, sel, 4); frm += 4;} while (0)
+#define WAPI_OUI_BYTES 0x00, 0x14, 0x72
+
+    static const u_int8_t cipher_suite[4] =
+        { WAPI_OUI_BYTES, WAPI_CSE_WPI_SMS4};   /* SMS4 128 bits */
+    static const u_int8_t key_mgt_unspec[4] =
+        { WAPI_OUI_BYTES, WAPI_ASE_WAI_CERT };
+    static const u_int8_t key_mgt_psk[4] =
+        { WAPI_OUI_BYTES, WAPI_ASE_WAI_PSK };
+    u8 *frm = tailpos;
+    u8 *selcnt;
+    *frm++ = WLAN_EID_WAPI;
+    *frm++ = 0;             /* length filled in below */
+    ADDSHORT(frm, WAPI_VERSION);
+
+    /* authenticator selector list */
+    selcnt = frm;
+    ADDSHORT(frm, 0);/* selector count */
+
+
+    //WAPI_ASE_WAI_PSK
+    selcnt[0]++;
+    ADDSELECTOR(frm, key_mgt_psk);
+
+    /* unicast cipher list */
+    selcnt = frm;
+    ADDSHORT(frm, 0);           /* selector count */
+
+    selcnt[0]++;
+    ADDSELECTOR(frm, cipher_suite);
+
+    /* multicast cipher */
+    ADDSELECTOR(frm, cipher_suite);
+
+    /* optional capabilities */
+    /* STA shouldn't EVER be sending out "pre-auth supported".  It is an AP only
+     * capability: if pre-auth is supported it is 1 else 0 */
+    ADDSHORT(frm, 0);
+    /* XXX PMKID */
+
+    /* BKID count, only in ASSOC/REASSOC REQ frames from STA to AP*/
+    //ADDSHORT(frm, 0);
+
+    /* calculate element length */
+    /* calculate element length */
+
+    tailpos[1] = (u8)(frm - tailpos - 2);
+    return frm;
+#undef ADDSELECTOR
+#undef ADDSHORT
+#undef WAPI_OUI_BYTES
+}
 
 int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 			       struct wpa_driver_ap_params *params)
@@ -1798,6 +1868,7 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 		return -1;
 	}
 	tailend = tail + tail_len;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  %d", __func__, __LINE__);
 
 	head->frame_control = IEEE80211_FC(WLAN_FC_TYPE_MGMT,
 					   WLAN_FC_STYPE_BEACON);
@@ -1808,11 +1879,13 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	os_memcpy(head->bssid, hapd->own_addr, ETH_ALEN);
 	head->u.beacon.beacon_int =
 		host_to_le16(hapd->iconf->beacon_int);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  %d", __func__, __LINE__);
 
 	/* hardware or low-level driver will setup seq_ctrl and timestamp */
 	capab_info = hostapd_own_capab_info(hapd);
 	head->u.beacon.capab_info = host_to_le16(capab_info);
 	pos = &head->u.beacon.variable[0];
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  %d", __func__, __LINE__);
 
 	/* SSID */
 	*pos++ = WLAN_EID_SSID;
@@ -1829,6 +1902,7 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 			  hapd->conf->ssid.ssid_len);
 		pos += hapd->conf->ssid.ssid_len;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  %d", __func__, __LINE__);
 
 	/* Supported rates */
 	pos = hostapd_eid_supp_rates(hapd, pos);
@@ -1842,6 +1916,7 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 
 	/* Power Constraint element */
 	tailpos = hostapd_eid_pwr_constraint(hapd, tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld %d", __func__, tailpos - tail, __LINE__);
 
 	/* CSA IE */
 	csa_pos = hostapd_eid_csa(hapd, tailpos);
@@ -1851,26 +1926,35 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 
 	/* ERP Information element */
 	tailpos = hostapd_eid_erp_info(hapd, tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld %d", __func__, tailpos - tail, __LINE__);
 
 	/* Extended supported rates */
 	tailpos = hostapd_eid_ext_supp_rates(hapd, tailpos);
+
+	/* WAPI */
+	tailpos = hostapd_wapi_id_set(hapd, tailpos);
 
 	tailpos = hostapd_get_rsne(hapd, tailpos, tailend - tailpos);
 	tailpos = hostapd_eid_bss_load(hapd, tailpos, tailend - tailpos);
 	tailpos = hostapd_eid_rm_enabled_capab(hapd, tailpos,
 					       tailend - tailpos);
 	tailpos = hostapd_get_mde(hapd, tailpos, tailend - tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld %d", __func__, tailpos - tail, __LINE__);
 
 	/* eCSA IE */
 	csa_pos = hostapd_eid_ecsa(hapd, tailpos);
 	if (csa_pos != tailpos)
 		hapd->cs_c_off_ecsa_beacon = csa_pos - tail - 1;
 	tailpos = csa_pos;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld %d", __func__, tailpos - tail, __LINE__);
 
 	tailpos = hostapd_eid_supported_op_classes(hapd, tailpos);
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld %d", __func__, tailpos - tail, __LINE__);
 	tailpos = hostapd_eid_ht_capabilities(hapd, tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld %d", __func__, tailpos - tail, __LINE__);
 	tailpos = hostapd_eid_ht_operation(hapd, tailpos);
-
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld %d", __func__, tailpos - tail, __LINE__);
 	if (hapd->iconf->mbssid && hapd->iconf->num_bss > 1) {
 		if (ieee802_11_build_ap_params_mbssid(hapd, params)) {
 			os_free(head);
@@ -1885,6 +1969,7 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	}
 
 	tailpos = hostapd_eid_ext_capab(hapd, tailpos, complete);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld %d", __func__, tailpos - tail, __LINE__);
 
 	/*
 	 * TODO: Time Advertisement element should only be included in some
@@ -1966,6 +2051,7 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	/* WPA / OSEN */
 	tailpos = hostapd_get_wpa_ie(hapd, tailpos, tailend - tailpos);
 	tailpos = hostapd_get_osen_ie(hapd, tailpos, tailend - tailpos);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld %d", __func__, tailpos - tail, __LINE__);
 
 	/* Wi-Fi Alliance WMM */
 	tailpos = hostapd_eid_wmm(hapd, tailpos);
@@ -2007,6 +2093,7 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 	}
 
 	tail_len = tailpos > tail ? tailpos - tail : 0;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  tail_len=%ld tail_len=%ld %d", __func__, tailpos - tail,tail_len, __LINE__);
 
 	resp = hostapd_probe_resp_offloads(hapd, &resp_len);
 #endif /* NEED_AP_MLME */
@@ -2032,6 +2119,15 @@ int ieee802_11_build_ap_params(struct hostapd_data *hapd,
 		params->pairwise_ciphers = hapd->conf->rsn_pairwise;
 	else if (hapd->conf->wpa & WPA_PROTO_WPA)
 		params->pairwise_ciphers = hapd->conf->wpa_pairwise;
+	else if (hapd->conf->wpa & WPA_PROTO_WAPI) {
+		if (hapd->conf->wpa_pairwise == 0) {
+			hapd->conf->wpa_pairwise = WPA_CIPHER_SMS4;
+		}
+		params->pairwise_ciphers = hapd->conf->wpa_pairwise;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi hapd->conf->wpa_pairwise=%d",
+			__func__, hapd->conf->wpa_pairwise);
+	}
 	params->group_cipher = hapd->conf->wpa_group;
 	params->key_mgmt_suites = hapd->conf->wpa_key_mgmt;
 	params->auth_algs = hapd->conf->auth_algs;

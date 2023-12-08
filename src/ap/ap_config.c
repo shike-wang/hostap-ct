@@ -80,6 +80,7 @@ void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 #else /* CONFIG_NO_TKIP */
 	bss->wpa_pairwise = WPA_CIPHER_TKIP;
 	bss->wpa_group = WPA_CIPHER_TKIP;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi bss->wpa_pairwise = WPA_CIPHER_TKIP %d", __func__, __LINE__);
 #endif /* CONFIG_NO_TKIP */
 	bss->rsn_pairwise = 0;
 
@@ -1332,16 +1333,22 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 			   "allowed, disabling HT capabilities");
 	}
 #endif /* CONFIG_WEP */
-
+	if (bss->wpa & 4) {
+		bss->wpa_pairwise = 0;
+		bss->rsn_pairwise = 0;
+		bss->wpa_pairwise |= WPA_CIPHER_SMS4;
+		bss->rsn_pairwise |= WPA_CIPHER_SMS4;
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi force wpa_pairwise rsn_pairwise %d", __func__, __LINE__);
+	}
 	if (full_config && conf->ieee80211n && bss->wpa &&
-	    !(bss->wpa_pairwise & WPA_CIPHER_CCMP) &&
-	    !(bss->rsn_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP |
+	    !(bss->wpa_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_SMS4)) &&
+	    !(bss->rsn_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP | WPA_CIPHER_SMS4|
 				   WPA_CIPHER_CCMP_256 | WPA_CIPHER_GCMP_256)))
 	{
 		bss->disable_11n = true;
 		wpa_printf(MSG_ERROR, "HT (IEEE 802.11n) with WPA/WPA2 "
 			   "requires CCMP/GCMP to be enabled, disabling HT "
-			   "capabilities");
+			   "capabilities wpa_pairwise=0x%x rsn_pairwise=0x%x", bss->wpa_pairwise, bss->rsn_pairwise);
 	}
 
 #ifdef CONFIG_IEEE80211AC
@@ -1355,8 +1362,8 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 #endif /* CONFIG_WEP */
 
 	if (full_config && conf->ieee80211ac && bss->wpa &&
-	    !(bss->wpa_pairwise & WPA_CIPHER_CCMP) &&
-	    !(bss->rsn_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP |
+	    !(bss->wpa_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_SMS4)) &&
+	    !(bss->rsn_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP | WPA_CIPHER_SMS4|
 				   WPA_CIPHER_CCMP_256 | WPA_CIPHER_GCMP_256)))
 	{
 		bss->disable_11ac = true;
@@ -1376,9 +1383,9 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 #endif /* CONFIG_WEP */
 
 	if (full_config && conf->ieee80211ax && bss->wpa &&
-	    !(bss->wpa_pairwise & WPA_CIPHER_CCMP) &&
+	    !(bss->wpa_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_SMS4)) &&
 	    !(bss->rsn_pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP |
-				   WPA_CIPHER_CCMP_256 | WPA_CIPHER_GCMP_256)))
+				   WPA_CIPHER_CCMP_256 | WPA_CIPHER_GCMP_256 | WPA_CIPHER_SMS4)))
 	{
 		bss->disable_11ax = true;
 		wpa_printf(MSG_ERROR,

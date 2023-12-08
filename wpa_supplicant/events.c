@@ -277,6 +277,8 @@ static int wpa_supplicant_select_config(struct wpa_supplicant *wpa_s,
 		 * driver indicated the actual values used in the
 		 * (Re)Association Request frame. */
 		skip_default_rsne = data && data->assoc_info.req_ies;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__,  __LINE__);
 		if (wpa_supplicant_set_suites(wpa_s, bss, ssid,
 					      wpa_ie, &wpa_ie_len,
 					      skip_default_rsne) < 0)
@@ -772,7 +774,24 @@ static int wpa_supplicant_ssid_bss_match(struct wpa_supplicant *wpa_s,
 				"   skip - MFP Required but network not MFP Capable (WPA, OSEN failed, and Not OWE)");
 		return 0;
 	}
+#if 1//WAPI
+	rsn_ie = wpa_bss_get_ie(bss, WLAN_EID_BSS_AC_ACCESS_DELAY);
+	while ((ssid->proto & (WPA_PROTO_WAPI)) && rsn_ie) {
+		proto_match++;
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi ssid->proto=0x%x %d", __func__, ssid->proto, __LINE__);
 
+		if (wpa_parse_wapi_ie_rsn(rsn_ie, 2 + rsn_ie[1], &ie)) {
+			if (debug_print)
+				wpa_dbg(wpa_s, MSG_DEBUG,
+					"   skip WLAN_EID_BSS_AC_ACCESS_DELAY IE - parse failed");
+			break;
+		}
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi select based on WPA_PROTO_WAPI %d", __func__,  __LINE__);
+		return 1;
+	}
+
+
+#endif
 	wpa_ie = wpa_bss_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
 	while ((ssid->proto & WPA_PROTO_WPA) && wpa_ie) {
 		proto_match++;
@@ -860,11 +879,11 @@ static int wpa_supplicant_ssid_bss_match(struct wpa_supplicant *wpa_s,
 	}
 #endif /* CONFIG_OWE */
 
-	if ((ssid->proto & (WPA_PROTO_WPA | WPA_PROTO_RSN)) &&
+	if ((ssid->proto & (WPA_PROTO_WPA | WPA_PROTO_RSN | WPA_PROTO_WAPI)) &&
 	    wpa_key_mgmt_wpa(ssid->key_mgmt) && proto_match == 0) {
 		if (debug_print)
 			wpa_dbg(wpa_s, MSG_DEBUG,
-				"   skip - no WPA/RSN proto match");
+				"   skip - no WPA/RSN proto match proto=%x%x key_mgmt=%d, proto_match=%d", ssid->proto, ssid->key_mgmt, proto_match);
 		return 0;
 	}
 
@@ -1266,6 +1285,145 @@ static bool sae_pk_acceptable_bss_with_pk(struct wpa_supplicant *wpa_s,
 }
 #endif /* CONFIG_SAE_PK */
 
+extern int rsn_selector_to_bitfield(const u8 *s);
+/**
+ * wpa_parse_wpa_ie_rsn - Parse RSN IE
+ * @rsn_ie: Buffer containing RSN IE
+ * @rsn_ie_len: RSN IE buffer length (including IE number and length octets)
+ * @data: Pointer to structure that will be filled in with parsed data
+ * Returns: 0 on success, <0 on failure
+ */
+int wpa_parse_wapi_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
+			 struct wpa_ie_data *data)
+{
+	const u8 *pos;
+	int left;
+	int i, count;
+	const struct rsn_ie_hdr *wapi_ie = (const struct rsn_ie_hdr *)rsn_ie;
+
+	os_memset(data, 0, sizeof(*data));
+	data->proto = WPA_PROTO_WAPI;
+	data->pairwise_cipher = WPA_CIPHER_SMS4;
+	data->group_cipher = WPA_CIPHER_SMS4;
+	data->key_mgmt = WPA_KEY_MGMT_WAPI_PSK;
+	data->capabilities = 0;
+	data->pmkid = NULL;
+	data->num_pmkid = 0;
+	data->mgmt_group_cipher = WPA_CIPHER_AES_128_CMAC;
+
+	if (rsn_ie_len == 0) {
+		/* No RSN IE - fail silently */
+		return -1;
+	}
+
+	if (rsn_ie_len < sizeof(struct rsn_ie_hdr)) {
+		wpa_printf(MSG_DEBUG, "%s: ie len too short %lu",
+			   __func__, (unsigned long) rsn_ie_len);
+		return -1;
+	}
+
+
+	if (wapi_ie->elem_id != WLAN_EID_BSS_AC_ACCESS_DELAY||
+	    wapi_ie->len != rsn_ie_len - 2 ||
+	    WPA_GET_LE16(wapi_ie->version) != WAPI_VERSION) {
+		wpa_printf(MSG_DEBUG, "%s: malformed ie or unknown version",
+			   __func__);
+		return -2;
+	}
+
+	pos = (const u8 *) (wapi_ie + 1);
+	left = rsn_ie_len - sizeof(*wapi_ie);
+	// AKM suite count field
+	count = WPA_GET_LE16(pos);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi AKM suite count=%d %d",
+		__func__, count, __LINE__);
+	pos += 2;
+	left -= 2;
+
+	if (left >= RSN_SELECTOR_LEN) {
+		data->group_cipher = rsn_selector_to_bitfield(pos);
+		data->has_group = 1;
+		if (!wpa_cipher_valid_group(data->group_cipher)) {
+			wpa_printf(MSG_DEBUG,
+				   "%s: invalid group cipher 0x%x (%08x)",
+				   __func__, data->group_cipher,
+				   WPA_GET_BE32(pos));
+#ifdef CONFIG_NO_TKIP
+			if (RSN_SELECTOR_GET(pos) == RSN_CIPHER_SUITE_TKIP) {
+				wpa_printf(MSG_DEBUG,
+					   "%s: TKIP as group cipher not supported in CONFIG_NO_TKIP=y build",
+					   __func__);
+			}
+#endif /* CONFIG_NO_TKIP */
+			return -1;
+		}
+		pos += RSN_SELECTOR_LEN;
+		left -= RSN_SELECTOR_LEN;
+	} else if (left > 0) {
+		wpa_printf(MSG_DEBUG, "%s: ie length mismatch, %u too much",
+			   __func__, left);
+		return -3;
+	}
+	
+
+
+	if (left >= 2) {
+		data->pairwise_cipher = 0;
+		// unicast cipher suite count field
+		count = WPA_GET_LE16(pos);
+		pos += 2;
+		left -= 2;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi unicast cipher suite count=%d %d",
+			__func__, count, __LINE__);
+		if (count == 0 || count > left / RSN_SELECTOR_LEN) {
+			wpa_printf(MSG_DEBUG, "%s: ie count botch (pairwise), "
+				   "count %u left %u", __func__, count, left);
+			return -4;
+		}
+		if (count)
+			data->has_pairwise = 1;
+		for (i = 0; i < count; i++) {
+			data->pairwise_cipher |= rsn_selector_to_bitfield(pos);
+			pos += RSN_SELECTOR_LEN;
+			left -= RSN_SELECTOR_LEN;
+		}
+
+	} else if (left == 1) {
+		wpa_printf(MSG_DEBUG, "%s: ie too short (for key mgmt)",
+			   __func__);
+		return -5;
+	}
+	
+	// multicast cipher suite count field
+	if (left >= 4) {
+		data->mgmt_group_cipher = rsn_selector_to_bitfield(pos);
+		if (!wpa_cipher_valid_mgmt_group(data->mgmt_group_cipher)) {
+			wpa_printf(MSG_DEBUG,
+				   "%s: Unsupported management group cipher 0x%x (%08x)",
+				   __func__, data->mgmt_group_cipher,
+				   WPA_GET_BE32(pos));
+			return -10;
+		}
+		pos += RSN_SELECTOR_LEN;
+		left -= RSN_SELECTOR_LEN;
+	}
+	// capabilities
+	if (left >= 2) {
+		data->capabilities = WPA_GET_LE16(pos);
+		pos += 2;
+		left -= 2;
+	}
+
+
+	if (left > 0) {
+		wpa_hexdump(MSG_DEBUG,
+			    "wpa_parse_wpa_ie_rsn: ignore trailing bytes",
+			    pos, left);
+	}
+
+	return 0;
+}
 
 static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 			    const u8 *match_ssid, size_t match_ssid_len,
@@ -1273,7 +1431,7 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 			    bool debug_print)
 {
 	int res;
-	bool wpa, check_ssid, osen, rsn_osen = false;
+	bool wpa, check_ssid, osen, rsn_osen = false, rsn_wapi = false;
 	struct wpa_ie_data data;
 #ifdef CONFIG_MBO
 	const u8 *assoc_disallow;
@@ -1285,6 +1443,18 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 
 	ie = wpa_bss_get_vendor_ie(bss, WPA_IE_VENDOR_TYPE);
 	wpa = ie && ie[1];
+
+
+	//WAPI
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d",
+		__func__, __LINE__);
+	ie = wpa_bss_get_ie(bss, WLAN_EID_BSS_AC_ACCESS_DELAY);
+	wpa |= ie && ie[1];
+	if (ie && wpa_parse_wapi_ie_rsn(ie, 2 + ie[1], &data) == 0 &&
+	    (data.key_mgmt & (WPA_KEY_MGMT_WAPI_CERT | WPA_KEY_MGMT_WAPI_PSK))) {
+		rsn_wapi = true;
+	}
+	//RSN
 	ie = wpa_bss_get_ie(bss, WLAN_EID_RSN);
 	wpa |= ie && ie[1];
 	if (ie && wpa_parse_wpa_ie_rsn(ie, 2 + ie[1], &data) == 0 &&
@@ -1374,7 +1544,8 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 				"   skip - BSSID not in list of accepted values");
 		return false;
 	}
-
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi ssid->id=%d ssid=%s "MACSTR" %d",
+		__func__, ssid->id, ssid->ssid, MAC2STR(ssid->bssid), __LINE__);
 	if (!wpa_supplicant_ssid_bss_match(wpa_s, ssid, bss, debug_print))
 		return false;
 
@@ -1382,6 +1553,8 @@ static bool wpa_scan_res_ok(struct wpa_supplicant *wpa_s, struct wpa_ssid *ssid,
 	    !(ssid->key_mgmt & WPA_KEY_MGMT_NONE) &&
 	    !(ssid->key_mgmt & WPA_KEY_MGMT_WPS) &&
 	    !(ssid->key_mgmt & WPA_KEY_MGMT_OWE) &&
+	    !(ssid->key_mgmt & WPA_KEY_MGMT_WAPI_PSK) &&
+	    !(ssid->key_mgmt & WPA_KEY_MGMT_WAPI_CERT) &&
 	    !(ssid->key_mgmt & WPA_KEY_MGMT_IEEE8021X_NO_WPA)) {
 		if (debug_print)
 			wpa_dbg(wpa_s, MSG_DEBUG,
@@ -1615,7 +1788,7 @@ struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 				     struct wpa_ssid *group,
 				     int only_first_ssid, int debug_print)
 {
-	u8 wpa_ie_len, rsn_ie_len;
+	u8 wpa_ie_len, rsn_ie_len, wapi_ie_len = 0;
 	const u8 *ie;
 	struct wpa_ssid *ssid;
 	int osen;
@@ -1628,16 +1801,19 @@ struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 
 	ie = wpa_bss_get_ie(bss, WLAN_EID_RSN);
 	rsn_ie_len = ie ? ie[1] : 0;
+	
+	ie = wpa_bss_get_ie(bss, WLAN_EID_BSS_AC_ACCESS_DELAY);
+	wapi_ie_len = ie ? ie[1] : 0;
 
 	ie = wpa_bss_get_vendor_ie(bss, OSEN_IE_VENDOR_TYPE);
 	osen = ie != NULL;
 
 	if (debug_print) {
-		wpa_dbg(wpa_s, MSG_DEBUG, "%d: " MACSTR
-			" ssid='%s' wpa_ie_len=%u rsn_ie_len=%u caps=0x%x level=%d freq=%d %s%s%s",
+		wpa_dbg(wpa_s, MSG_DEBUG, "%s: %d: " MACSTR
+			" ssid='%s' wpa_ie_len=%u rsn_ie_len=%u wapi_ie_len=%u caps=0x%x level=%d freq=%d %s%s%s", __func__,
 			i, MAC2STR(bss->bssid),
 			wpa_ssid_txt(bss->ssid, bss->ssid_len),
-			wpa_ie_len, rsn_ie_len, bss->caps, bss->level,
+			wpa_ie_len, rsn_ie_len, wapi_ie_len, bss->caps, bss->level,
 			bss->freq,
 			wpa_bss_get_vendor_ie(bss, WPS_IE_VENDOR_TYPE) ?
 			" wps" : "",
@@ -1698,10 +1874,12 @@ struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 			wpa_dbg(wpa_s, MSG_DEBUG, "   skip - channel disabled");
 		return NULL;
 	}
-
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 	for (ssid = group; ssid; ssid = only_first_ssid ? NULL : ssid->pnext) {
 		if (wpa_scan_res_ok(wpa_s, ssid, match_ssid, match_ssid_len,
 				    bss, bssid_ignore_count, debug_print))
+			return ssid;
+		if (wapi_ie_len)
 			return ssid;
 	}
 
@@ -5493,6 +5671,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 			event_to_string(event), event);
 		return;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi event=%d %d", __func__, event, __LINE__);
 
 #ifndef CONFIG_NO_STDOUT_DEBUG
 	if (event == EVENT_RX_MGMT && data->rx_mgmt.frame_len >= 24) {
@@ -5672,6 +5851,8 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 		break;
 #endif /* CONFIG_IBSS_RSN */
 	case EVENT_ASSOC_REJECT:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_ASSOC_REJECT call wpas_event_assoc_reject %d",
+			__func__, __LINE__);
 		wpas_event_assoc_reject(wpa_s, data);
 		break;
 	case EVENT_AUTH_TIMED_OUT:

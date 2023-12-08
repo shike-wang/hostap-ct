@@ -26,10 +26,15 @@ u8 * hostapd_eid_ht_capabilities(struct hostapd_data *hapd, u8 *eid)
 	struct ieee80211_ht_capabilities *cap;
 	u8 *pos = eid;
 	int i;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi ieee80211n=%d current_mode=%p disable_11n=%d is_6ghz_op_class=%d %d",
+		__func__, hapd->iconf->ieee80211n, hapd->iface->current_mode,
+	    hapd->conf->disable_11n, is_6ghz_op_class(hapd->iconf->op_class), __LINE__);
 
 	if (!hapd->iconf->ieee80211n || !hapd->iface->current_mode ||
-	    hapd->conf->disable_11n || is_6ghz_op_class(hapd->iconf->op_class))
+	    hapd->conf->disable_11n || is_6ghz_op_class(hapd->iconf->op_class)) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi NO HT %d", __func__, __LINE__);
 		return eid;
+	}
 
 	*pos++ = WLAN_EID_HT_CAP;
 	*pos++ = sizeof(*cap);

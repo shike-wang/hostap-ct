@@ -357,6 +357,8 @@ static inline int wpa_drv_update_ft_ies(struct wpa_supplicant *wpa_s,
 static inline int wpa_drv_set_ap(struct wpa_supplicant *wpa_s,
 				 struct wpa_driver_ap_params *params)
 {
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi calling wpa_s->driver->set_ap %d", __func__, __LINE__);
+
 	if (wpa_s->driver->set_ap)
 		return wpa_s->driver->set_ap(wpa_s->drv_priv, params);
 	return -1;

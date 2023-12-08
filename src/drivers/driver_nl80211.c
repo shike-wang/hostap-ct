@@ -3248,6 +3248,8 @@ static u32 wpa_cipher_to_cipher_suite(unsigned int cipher)
 		return RSN_CIPHER_SUITE_WEP104;
 	case WPA_CIPHER_WEP40:
 		return RSN_CIPHER_SUITE_WEP40;
+	case WPA_CIPHER_SMS4:
+		return RSN_CIPHER_SUITE_SMS4;
 	case WPA_CIPHER_GTK_NOT_USED:
 		return RSN_CIPHER_SUITE_NO_GROUP_ADDRESSED;
 	default:
@@ -3275,6 +3277,8 @@ static int wpa_cipher_to_cipher_suites(unsigned int ciphers, u32 suites[],
 		suites[num_suites++] = RSN_CIPHER_SUITE_WEP104;
 	if (num_suites < max_suites && ciphers & WPA_CIPHER_WEP40)
 		suites[num_suites++] = RSN_CIPHER_SUITE_WEP40;
+	if (num_suites < max_suites && ciphers & WPA_CIPHER_SMS4)
+		suites[num_suites++] = RSN_CIPHER_SUITE_SMS4;
 
 	return num_suites;
 }
@@ -3310,6 +3314,8 @@ static int wpa_key_mgmt_to_suites(unsigned int key_mgmt_suites, u32 suites[],
 	__AKM(OWE, OWE);
 	__AKM(DPP, DPP);
 	__AKM(FT_IEEE8021X_SHA384, FT_802_1X_SHA384);
+	__AKM(WAPI_PSK, SMS4);
+	__AKM(WAPI_CERT, SMS4);
 #undef __AKM
 
 	return num_suites;
@@ -5118,14 +5124,23 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 		 nla_put(msg, NL80211_ATTR_AKM_SUITES, num_suites * sizeof(u32),
 			 suites))
 		goto fail;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi params->key_mgmt_suites=0x%x pairwise_ciphers=0x%x %d",
+		__func__, params->key_mgmt_suites,
+		params->pairwise_ciphers,
+		__LINE__);
 
 	if (params->key_mgmt_suites & WPA_KEY_MGMT_IEEE8021X_NO_WPA &&
 	    (!params->pairwise_ciphers ||
 	     params->pairwise_ciphers & (WPA_CIPHER_WEP104 | WPA_CIPHER_WEP40)) &&
 	    (nla_put_u16(msg, NL80211_ATTR_CONTROL_PORT_ETHERTYPE, ETH_P_PAE) ||
-	     nla_put_flag(msg, NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT)))
+	     nla_put_flag(msg, NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT))) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi ERROR key_mgmt_suites=0x%x pairwise_ciphers=0x%x %d",
+			__func__, params->key_mgmt_suites,
+			params->pairwise_ciphers,
+			__LINE__);
 		goto fail;
-
+	}
 	if (drv->device_ap_sme) {
 		u32 flags = 0;
 
@@ -5150,6 +5165,10 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 		   params->pairwise_ciphers);
 	num_suites = wpa_cipher_to_cipher_suites(params->pairwise_ciphers,
 						 suites, ARRAY_SIZE(suites));
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi num_suites=%d will put NL80211_ATTR_CIPHER_SUITES_PAIRWISE %d",
+		__func__, num_suites,
+		__LINE__);
 	if (num_suites &&
 	    nla_put(msg, NL80211_ATTR_CIPHER_SUITES_PAIRWISE,
 		    num_suites * sizeof(u32), suites))

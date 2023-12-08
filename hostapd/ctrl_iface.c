@@ -4516,18 +4516,26 @@ static int hostapd_ctrl_iface_dup_param(struct hostapd_data *src_hapd,
 			   param);
 		goto error_return;
 	}
+	wpa_printf(MSG_ERROR,
+			  "%s: shikew_wpai param: %s", __func__, param);
 
 	if (os_strcmp(param, "wpa") == 0) {
 		os_snprintf(value, HOSTAPD_CLI_DUP_VALUE_MAX_LEN, "%d",
 			    src_hapd->conf->wpa);
 	} else if (os_strcmp(param, "wpa_key_mgmt") == 0 &&
 		   src_hapd->conf->wpa_key_mgmt) {
+		   
+		   wpa_printf(MSG_ERROR,
+					 "%s: shikew_wpai wpa_key_mgmt", __func__);
 		res = hostapd_ctrl_iface_get_key_mgmt(
 			src_hapd, value, HOSTAPD_CLI_DUP_VALUE_MAX_LEN);
 		if (os_snprintf_error(HOSTAPD_CLI_DUP_VALUE_MAX_LEN, res))
 			goto error_stringify;
 	} else if (os_strcmp(param, "wpa_pairwise") == 0 &&
 		   src_hapd->conf->wpa_pairwise) {
+		   
+		   wpa_printf(MSG_ERROR,
+					 "%s: shikew_wpai wpa_pairwise", __func__);
 		res = wpa_write_ciphers(value,
 					value + HOSTAPD_CLI_DUP_VALUE_MAX_LEN,
 					src_hapd->conf->wpa_pairwise, " ");
@@ -4535,12 +4543,24 @@ static int hostapd_ctrl_iface_dup_param(struct hostapd_data *src_hapd,
 			goto error_stringify;
 	} else if (os_strcmp(param, "rsn_pairwise") == 0 &&
 		   src_hapd->conf->rsn_pairwise) {
+		   
+		   wpa_printf(MSG_ERROR,
+					 "%s: shikew_wpai rsn_pairwise", __func__);
 		res = wpa_write_ciphers(value,
 					value + HOSTAPD_CLI_DUP_VALUE_MAX_LEN,
 					src_hapd->conf->rsn_pairwise, " ");
 		if (res < 0)
 			goto error_stringify;
-	} else if (os_strcmp(param, "wpa_passphrase") == 0 &&
+	} else if (os_strcmp(param, "wapi_pairwise") == 0 &&
+		   src_hapd->conf->rsn_pairwise) {
+		wpa_printf(MSG_ERROR,
+				  "%s: shikew_wpai wapi_pairwise", __func__);
+		res = wpa_write_ciphers(value,
+					value + HOSTAPD_CLI_DUP_VALUE_MAX_LEN,
+					src_hapd->conf->rsn_pairwise, " ");
+		if (res < 0)
+			goto error_stringify;
+	}else if (os_strcmp(param, "wpa_passphrase") == 0 &&
 		   src_hapd->conf->ssid.wpa_passphrase) {
 		os_snprintf(value, HOSTAPD_CLI_DUP_VALUE_MAX_LEN, "%s",
 			    src_hapd->conf->ssid.wpa_passphrase);

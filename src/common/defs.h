@@ -93,6 +93,8 @@ static inline int wpa_key_mgmt_wpa_psk(int akm)
 			 WPA_KEY_MGMT_SAE |
 			 WPA_KEY_MGMT_SAE_EXT_KEY |
 			 WPA_KEY_MGMT_FT_SAE |
+			 WPA_KEY_MGMT_WAPI_CERT |
+			 WPA_KEY_MGMT_WAPI_PSK |
 			 WPA_KEY_MGMT_FT_SAE_EXT_KEY));
 }
 

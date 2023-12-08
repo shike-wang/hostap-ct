@@ -15,6 +15,8 @@
 #include "wpa_i.h"
 #include "wpa_ie.h"
 
+extern int wpa_parse_wapi_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
+			 struct wpa_ie_data *data);
 
 /**
  * wpa_parse_wpa_ie - Parse WPA/RSN IE
@@ -30,6 +32,9 @@ int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
 {
 	if (wpa_ie_len >= 1 && wpa_ie[0] == WLAN_EID_RSN)
 		return wpa_parse_wpa_ie_rsn(wpa_ie, wpa_ie_len, data);
+	if (wpa_ie_len >= 1 && wpa_ie[0] == WLAN_EID_BSS_AC_ACCESS_DELAY)
+		return wpa_parse_wapi_ie_rsn(wpa_ie, wpa_ie_len, data);
+	
 	if (wpa_ie_len >= 6 && wpa_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
 	    wpa_ie[1] >= 4 && WPA_GET_BE32(&wpa_ie[2]) == OSEN_IE_VENDOR_TYPE)
 		return wpa_parse_wpa_ie_rsn(wpa_ie, wpa_ie_len, data);
@@ -88,6 +93,8 @@ static int wpa_gen_wpa_ie_wpa(u8 *wpa_ie, size_t wpa_ie_len,
 		RSN_SELECTOR_PUT(pos, WPA_AUTH_KEY_MGMT_NONE);
 	} else if (key_mgmt == WPA_KEY_MGMT_CCKM) {
 		RSN_SELECTOR_PUT(pos, WPA_AUTH_KEY_MGMT_CCKM);
+	} else if (key_mgmt == WPA_KEY_MGMT_WAPI_PSK) {
+		RSN_SELECTOR_PUT(pos, WPA_AUTH_KEY_MGMT_SMS4);
 	} else {
 		wpa_printf(MSG_WARNING, "Invalid key management type (%d).",
 			   key_mgmt);
@@ -176,6 +183,8 @@ static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_UNSPEC_802_1X);
 	} else if (key_mgmt == WPA_KEY_MGMT_PSK) {
 		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_PSK_OVER_802_1X);
+	} else if (key_mgmt == WPA_KEY_MGMT_WAPI_PSK) {
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SMS4);
 	} else if (key_mgmt == WPA_KEY_MGMT_CCKM) {
 		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_CCKM);
 #ifdef CONFIG_IEEE80211R

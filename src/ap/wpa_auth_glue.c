@@ -289,6 +289,7 @@ static void hostapd_wpa_auth_set_eapol(void *ctx, const u8 *addr,
 {
 	struct hostapd_data *hapd = ctx;
 	struct sta_info *sta = ap_get_sta(hapd, addr);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi var=%d value=%d %d", __func__,var, value, __LINE__);
 	if (sta == NULL)
 		return;
 	switch (var) {
@@ -351,6 +352,7 @@ static const u8 * hostapd_wpa_auth_get_psk(void *ctx, const u8 *addr,
 	struct hostapd_data *hapd = ctx;
 	struct sta_info *sta = ap_get_sta(hapd, addr);
 	const u8 *psk;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (vlan_id)
 		*vlan_id = 0;
@@ -462,6 +464,7 @@ static int hostapd_wpa_auth_set_key(void *ctx, int vlan_id, enum wpa_alg alg,
 {
 	struct hostapd_data *hapd = ctx;
 	const char *ifname = hapd->conf->iface;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi key_len=%d key_flag=%d %d", __func__, key_len, key_flag, __LINE__);
 
 	if (vlan_id > 0) {
 		ifname = hostapd_get_vlan_id_ifname(hapd->conf->vlan, vlan_id);
@@ -1117,6 +1120,7 @@ hostapd_wpa_auth_add_sta(void *ctx, const u8 *sta_addr)
 		sta->auth_alg = WLAN_AUTH_FT;
 		return sta->wpa_sm;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi init sta->wpa_sm %d", __func__, __LINE__);
 
 	sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth, sta->addr, NULL);
 	if (sta->wpa_sm == NULL) {
@@ -1670,6 +1674,7 @@ int hostapd_setup_wpa(struct hostapd_data *hapd)
 	};
 	const u8 *wpa_ie;
 	size_t wpa_ie_len;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  %d", __func__, __LINE__);
 
 	hostapd_wpa_auth_conf(hapd->conf, hapd->iconf, &_conf);
 	_conf.msg_ctx = hapd->msg_ctx;

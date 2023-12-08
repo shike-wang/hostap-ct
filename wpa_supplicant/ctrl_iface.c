@@ -4065,8 +4065,9 @@ static const struct cipher_info ciphers[] = {
 	{ WPA_DRIVER_CAPA_KEY_MGMT_WPA_NONE, "NONE", 0 },
 #ifdef CONFIG_WEP
 	{ WPA_DRIVER_CAPA_ENC_WEP104, "WEP104", 1 },
-	{ WPA_DRIVER_CAPA_ENC_WEP40, "WEP40", 1 }
+	{ WPA_DRIVER_CAPA_ENC_WEP40, "WEP40", 1 },
 #endif /* CONFIG_WEP */
+	{ WPA_DRIVER_CAPA_KEY_MGMT_WAPI, "SMS4", 0 }
 };
 
 static const struct cipher_info ciphers_group_mgmt[] = {
@@ -4246,7 +4247,7 @@ static int ctrl_iface_get_capability_key_mgmt(int res, bool strict,
 	if (res < 0) {
 		if (strict)
 			return 0;
-		len = os_strlcpy(buf, "WPA-PSK WPA-EAP IEEE8021X WPA-NONE "
+		len = os_strlcpy(buf, "WPA-PSK WPA-EAP WAPI-PSK IEEE8021X WPA-NONE "
 				 "NONE", buflen);
 		if (len >= buflen)
 			return -1;
@@ -4260,8 +4261,15 @@ static int ctrl_iface_get_capability_key_mgmt(int res, bool strict,
 		if (iftype == WPA_IF_MAX)
 			return -1;
 		key_mgmt = capa->key_mgmt_iftype[iftype];
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi capa->key_mgmt=0x%x iftype=%d %d",
+			__func__, capa->key_mgmt, iftype,
+			__LINE__);
 	} else {
 		key_mgmt = capa->key_mgmt;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi key_mgmt=capa->key_mgmt=0x%x %d",
+			__func__, capa->key_mgmt,
+			__LINE__);
 	}
 
 	ret = os_snprintf(pos, end - pos, "NONE IEEE8021X");
@@ -4293,6 +4301,8 @@ static int ctrl_iface_get_capability_key_mgmt(int res, bool strict,
 	}
 
 	if (key_mgmt & WPA_DRIVER_CAPA_KEY_MGMT_WAPI_PSK) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_DRIVER_CAPA_KEY_MGMT_WAPI_PSK %d",
+			__func__, __LINE__);
 		ret = os_snprintf(pos, end - pos, " WAPI-PSK");
 		if (os_snprintf_error(end - pos, ret))
 			return pos - buf;
@@ -4446,6 +4456,7 @@ static int ctrl_iface_get_capability_key_mgmt(int res, bool strict,
 		pos += ret;
 	}
 #endif /* CONFIG_HS20 */
+
 
 	return pos - buf;
 }
@@ -4774,6 +4785,9 @@ static int wpa_supplicant_ctrl_iface_get_capability(
 	wpa_dbg(wpa_s, MSG_DEBUG, "CTRL_IFACE: GET_CAPABILITY '%s'%s%s%s",
 		field, iftype ? " iftype=" : "", iftype ? iftype : "",
 		strict ? " strict" : "");
+	wpa_dbg(wpa_s, MSG_DEBUG, "%s: shikew_wapi CTRL_IFACE: GET_CAPABILITY '%s'%s%s%s", __func__,
+		field, iftype ? " iftype=" : "", iftype ? iftype : "",
+		strict ? " strict" : "");
 
 	if (os_strcmp(field, "eap") == 0) {
 		return eap_get_names(buf, buflen);
@@ -4781,13 +4795,26 @@ static int wpa_supplicant_ctrl_iface_get_capability(
 
 	res = wpa_drv_get_capa(wpa_s, &capa);
 
-	if (os_strcmp(field, "pairwise") == 0)
+	if (os_strcmp(field, "pairwise") == 0) {
+		
+		wpa_dbg(wpa_s, MSG_DEBUG, "%s: shikew_wapi capa.enc=0x%x", __func__, capa.enc);
+		if (!(capa.enc & WPA_DRIVER_CAPA_KEY_MGMT_WAPI)) {
+			capa.enc |= WPA_DRIVER_CAPA_KEY_MGMT_WAPI;
+			wpa_dbg(wpa_s, MSG_DEBUG, "%s: shikew_wapi manually set WPA_DRIVER_CAPA_KEY_MGMT_WAPI", __func__);
+		}
 		return ctrl_iface_get_capability_pairwise(res, strict, &capa,
 							  buf, buflen);
-
-	if (os_strcmp(field, "group") == 0)
+	}
+	if (os_strcmp(field, "group") == 0) {
+		
+		wpa_dbg(wpa_s, MSG_DEBUG, "%s: shikew_wapi capa.enc=0x%x", __func__, capa.enc);
+		if (!(capa.enc & WPA_DRIVER_CAPA_KEY_MGMT_WAPI)) {
+			capa.enc |= WPA_DRIVER_CAPA_KEY_MGMT_WAPI;
+			wpa_dbg(wpa_s, MSG_DEBUG, "%s: shikew_wapi manually set WPA_DRIVER_CAPA_KEY_MGMT_WAPI", __func__);
+		}
 		return ctrl_iface_get_capability_group(res, strict, &capa,
 						       buf, buflen);
+	}
 
 	if (os_strcmp(field, "group_mgmt") == 0)
 		return ctrl_iface_get_capability_group_mgmt(res, strict, &capa,

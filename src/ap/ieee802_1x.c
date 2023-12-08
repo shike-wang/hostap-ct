@@ -1345,9 +1345,9 @@ void ieee802_1x_new_station(struct hostapd_data *hapd, struct sta_info *sta)
 
 	key_mgmt = wpa_auth_sta_key_mgmt(sta->wpa_sm);
 	if (key_mgmt != -1 &&
-	    (wpa_key_mgmt_wpa_psk(key_mgmt) || key_mgmt == WPA_KEY_MGMT_OWE ||
+	    (wpa_key_mgmt_wpa_psk(key_mgmt) || key_mgmt == WPA_KEY_MGMT_OWE || key_mgmt == WPA_KEY_MGMT_WAPI_PSK || key_mgmt == WPA_KEY_MGMT_WAPI_CERT||
 	     key_mgmt == WPA_KEY_MGMT_DPP)) {
-		wpa_printf(MSG_DEBUG, "IEEE 802.1X: Ignore STA - using PSK");
+		wpa_printf(MSG_DEBUG, "IEEE 802.1X: Ignore STA - using PSK, key_mgmt=%d", key_mgmt);
 		/*
 		 * Clear any possible EAPOL authenticator state to support
 		 * reassociation change from WPA-EAP to PSK.
@@ -2802,6 +2802,8 @@ const u8 * ieee802_1x_get_session_id(struct eapol_state_machine *sm,
 void ieee802_1x_notify_port_enabled(struct eapol_state_machine *sm,
 				    bool enabled)
 {
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi enabled=%d %d", __func__,enabled, __LINE__);
+
 	if (!sm)
 		return;
 	sm->eap_if->portEnabled = enabled;
@@ -2811,6 +2813,8 @@ void ieee802_1x_notify_port_enabled(struct eapol_state_machine *sm,
 
 void ieee802_1x_notify_port_valid(struct eapol_state_machine *sm, bool valid)
 {
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi valid=%d %d", __func__,valid, __LINE__);
+
 	if (!sm)
 		return;
 	sm->portValid = valid;

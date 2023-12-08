@@ -3821,7 +3821,9 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 {
 	int resp;
 	const u8 *wpa_ie;
+	const u8 *wapi_ie;
 	size_t wpa_ie_len;
+	size_t wapi_ie_len;
 	const u8 *p2p_dev_addr = NULL;
 
 	resp = check_ssid(hapd, sta, elems->ssid, elems->ssid_len);
@@ -3948,6 +3950,9 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 		   elems->wpa_ie) {
 		wpa_ie = elems->wpa_ie;
 		wpa_ie_len = elems->wpa_ie_len;
+	} else if ((hapd->conf->wpa & WPA_PROTO_WAPI) && elems->wapi_ie) {
+		wapi_ie = elems->wapi_ie;
+		wapi_ie_len = elems->wapi_ie_len;
 	} else {
 		wpa_ie = NULL;
 		wpa_ie_len = 0;
@@ -3981,7 +3986,7 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 		sta->flags |= WLAN_STA_MAYBE_WPS;
 	} else
 #endif /* CONFIG_WPS */
-	if (hapd->conf->wpa && wpa_ie == NULL) {
+	if (hapd->conf->wpa && (wpa_ie == NULL) && (wapi_ie == NULL)) {
 		hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_INFO,
 			       "No WPA/RSN IE in association request");
@@ -3997,11 +4002,12 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 		wpa_ie -= 2;
 		wpa_ie_len += 2;
 
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi sta->wpa_sm=%p hapd->wpa_auth=%p %d", __func__, sta->wpa_sm, hapd->wpa_auth, __LINE__);
 		if (!sta->wpa_sm) {
 #ifdef CONFIG_IEEE80211BE
 			struct mld_info *info = &sta->mld_info;
 #endif /* CONFIG_IEEE80211BE */
-
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi sta->wpa_sm=%p %d", __func__, sta->wpa_sm, __LINE__);
 			sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth,
 							sta->addr,
 							p2p_dev_addr);
@@ -4025,6 +4031,7 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 		}
 
 		wpa_auth_set_auth_alg(sta->wpa_sm, sta->auth_alg);
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi wpa_auth_set_auth_alg =%d %d", __func__, sta->auth_alg, __LINE__);
 		res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm,
 					  hapd->iface->freq,
 					  wpa_ie, wpa_ie_len,
@@ -4177,7 +4184,9 @@ static int __check_assoc_ies(struct hostapd_data *hapd, struct sta_info *sta,
 				      elems->osen - 2, elems->osen_len + 2) < 0)
 			return WLAN_STATUS_INVALID_IE;
 #endif /* CONFIG_HS20 */
-	} else
+	} else if (hapd->conf->wpa && wapi_ie) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi TODO %d", __func__, sta->wpa_sm, hapd->wpa_auth, __LINE__);
+	}else
 		wpa_auth_sta_no_wpa(sta->wpa_sm);
 
 #ifdef CONFIG_P2P
@@ -4699,6 +4708,9 @@ static int add_associated_sta(struct hostapd_data *hapd,
 	return 0;
 }
 
+extern u8 * wpa_auth_write_assoc_resp_wapi(struct wpa_state_machine *sm,
+				   u8 *pos, size_t max_len,
+				   const u8 *req_ies, size_t req_ies_len);
 
 static u16 send_assoc_resp(struct hostapd_data *hapd, struct sta_info *sta,
 			   const u8 *addr, u16 status_code, int reassoc,
@@ -4712,6 +4724,7 @@ static u16 send_assoc_resp(struct hostapd_data *hapd, struct sta_info *sta,
 	u8 *p;
 	u16 res = WLAN_STATUS_SUCCESS;
 	const u8 *sa = hapd->own_addr;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi status_code=%d  %d", __func__, status_code, __LINE__);
 
 	buflen = sizeof(struct ieee80211_mgmt) + 1024;
 #ifdef CONFIG_FILS
@@ -4820,6 +4833,12 @@ static u16 send_assoc_resp(struct hostapd_data *hapd, struct sta_info *sta,
 						  buf + buflen - p,
 						  ies, ies_len);
 #endif /* CONFIG_OWE */
+
+	if (sta && status_code == WLAN_STATUS_SUCCESS &&
+	    (hapd->conf->wpa_key_mgmt & (WPA_KEY_MGMT_WAPI_PSK | WPA_KEY_MGMT_WAPI_CERT)))
+		p = wpa_auth_write_assoc_resp_wapi(sta->wpa_sm, p,
+						  buf + buflen - p,
+						  ies, ies_len);
 
 	if (sta && status_code == WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY)
 		p = hostapd_eid_assoc_comeback_time(hapd, sta, p);
@@ -5536,6 +5555,7 @@ static void handle_assoc(struct hostapd_data *hapd,
 		return;
 	}
 #endif /* CONFIG_FILS */
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi resp=%d  %d", __func__, resp, __LINE__);
 
 	if (resp >= 0)
 		reply_res = send_assoc_resp(hapd, sta, mgmt->sa, resp, reassoc,
@@ -6363,6 +6383,7 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 	u16 status;
 	struct sta_info *sta;
 	int new_assoc = 1;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi len=%ld reassoc=%d ok=%d %d", __func__, len, reassoc, ok, __LINE__);
 
 	sta = ap_get_sta(hapd, mgmt->da);
 	if (!sta) {
@@ -6434,6 +6455,8 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		 * Open, static WEP, FT protocol, or FILS; no separate
 		 * authorization step.
 		 */
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi sta->auth_alg=%d hapd->conf->ieee802_1x=%d hapd->conf->wpa=%d call ap_sta_set_authorized %d",
+		__func__, sta->auth_alg, hapd->conf->ieee802_1x, hapd->conf->wpa, __LINE__);
 		ap_sta_set_authorized(hapd, sta, 1);
 	}
 
@@ -6443,6 +6466,7 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		mlme_associate_indication(hapd, sta);
 
 	sta->sa_query_timed_out = 0;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (sta->eapol_sm == NULL) {
 		/*
@@ -6457,8 +6481,10 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		if (ap_sta_bind_vlan(hapd, sta) < 0)
 			goto handle_ml;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	hostapd_set_sta_flags(hapd, sta);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (!(sta->flags & WLAN_STA_WDS) && sta->pending_wds_enable) {
 		wpa_printf(MSG_DEBUG, "Enable 4-address WDS mode for STA "
@@ -6484,11 +6510,14 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 		if (!ret)
 			hostapd_set_wds_encryption(hapd, sta, ifname_wds);
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi sta->auth_alg=%d %d", __func__, sta->auth_alg, __LINE__);
 
 	if (sta->auth_alg == WLAN_AUTH_FT)
 		wpa_auth_sm_event(sta->wpa_sm, WPA_ASSOC_FT);
 	else
 		wpa_auth_sm_event(sta->wpa_sm, WPA_ASSOC);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi call hapd->new_assoc_sta_cb sta->eapol_sm=%p %d", __func__, sta->eapol_sm, __LINE__);
+	//hostapd_new_assoc_sta
 	hapd->new_assoc_sta_cb(hapd, sta, !new_assoc);
 	ieee802_1x_notify_port_enabled(sta->eapol_sm, 1);
 
@@ -6679,6 +6708,7 @@ void ieee802_11_mgmt_cb(struct hostapd_data *hapd, const u8 *buf, size_t len,
 		return;
 	}
 #endif /* CONFIG_TESTING_OPTIONS */
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi WLAN_FC_STYPE_AUTH=%d %d", __func__, stype, __LINE__);
 
 	switch (stype) {
 	case WLAN_FC_STYPE_AUTH:

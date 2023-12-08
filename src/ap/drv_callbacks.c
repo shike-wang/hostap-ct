@@ -301,25 +301,29 @@ int hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
 	if (elems.wps_ie) {
 		ie = elems.wps_ie - 2;
 		ielen = elems.wps_ie_len + 2;
-		wpa_printf(MSG_DEBUG, "STA included WPS IE in (Re)AssocReq");
+		wpa_printf(MSG_ERROR, "STA included WPS IE in (Re)AssocReq");
 	} else if (elems.rsn_ie) {
 		ie = elems.rsn_ie - 2;
 		ielen = elems.rsn_ie_len + 2;
-		wpa_printf(MSG_DEBUG, "STA included RSN IE in (Re)AssocReq");
+		wpa_printf(MSG_ERROR, "STA included RSN IE in (Re)AssocReq");
+	} else if (elems.wapi_ie) {
+		ie = elems.wapi_ie - 2;
+		ielen = elems.wapi_ie_len + 2;
+		wpa_printf(MSG_ERROR, "STA included WAPI IE in (Re)AssocReq");
 	} else if (elems.wpa_ie) {
 		ie = elems.wpa_ie - 2;
 		ielen = elems.wpa_ie_len + 2;
-		wpa_printf(MSG_DEBUG, "STA included WPA IE in (Re)AssocReq");
+		wpa_printf(MSG_ERROR, "STA included WPA IE in (Re)AssocReq");
 #ifdef CONFIG_HS20
 	} else if (elems.osen) {
 		ie = elems.osen - 2;
 		ielen = elems.osen_len + 2;
-		wpa_printf(MSG_DEBUG, "STA included OSEN IE in (Re)AssocReq");
+		wpa_printf(MSG_ERROR, "STA included OSEN IE in (Re)AssocReq");
 #endif /* CONFIG_HS20 */
 	} else {
 		ie = NULL;
 		ielen = 0;
-		wpa_printf(MSG_DEBUG,
+		wpa_printf(MSG_ERROR,
 			   "STA did not include WPS/RSN/WPA IE in (Re)AssocReq");
 	}
 
@@ -510,10 +514,12 @@ int hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
 			return 0;
 		}
 
-		if (sta->wpa_sm == NULL)
+		if (sta->wpa_sm == NULL) {
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi call init sta->wpa_sm for"MACSTR" %d", __func__, MAC2STR(sta->addr),__LINE__);
 			sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth,
 							sta->addr,
 							p2p_dev_addr);
+		}
 		if (sta->wpa_sm == NULL) {
 			wpa_printf(MSG_ERROR,
 				   "Failed to initialize WPA state machine");
@@ -1773,6 +1779,7 @@ static void hostapd_mgmt_tx_cb(struct hostapd_data *hapd, const u8 *buf,
 		 * used wildcard BBSID.
 		 */
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi call ieee802_11_mgmt_cb %d", __func__, __LINE__);
 	ieee802_11_mgmt_cb(hapd, buf, len, stype, ok);
 }
 
@@ -2191,6 +2198,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 	struct hostapd_data *hapd = ctx;
 #ifndef CONFIG_NO_STDOUT_DEBUG
 	int level = MSG_DEBUG;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (event == EVENT_RX_MGMT && data->rx_mgmt.frame &&
 	    data->rx_mgmt.frame_len >= 24) {
@@ -2213,19 +2221,23 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 
 	switch (event) {
 	case EVENT_MICHAEL_MIC_FAILURE:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 		michael_mic_failure(hapd, data->michael_mic_failure.src, 1);
 		break;
 	case EVENT_SCAN_RESULTS:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi hapd->iface->scan_cb=%p %d", __func__,hapd->iface->scan_cb, __LINE__);
 		if (hapd->iface->scan_cb)
 			hapd->iface->scan_cb(hapd->iface);
 		break;
 	case EVENT_WPS_BUTTON_PUSHED:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 		hostapd_wps_button_pushed(hapd, NULL);
 		break;
 #ifdef NEED_AP_MLME
 	case EVENT_TX_STATUS:
 		switch (data->tx_status.type) {
 		case WLAN_FC_TYPE_MGMT:
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_TX_STATUS WLAN_FC_TYPE_MGMT %d", __func__, __LINE__);
 			hostapd_mgmt_tx_cb(hapd, data->tx_status.data,
 					   data->tx_status.data_len,
 					   data->tx_status.stype,
@@ -2233,6 +2245,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 					   data->tx_status.link_id);
 			break;
 		case WLAN_FC_TYPE_DATA:
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_TX_STATUS WLAN_FC_TYPE_DATA %d", __func__, __LINE__);
 			hostapd_tx_status(hapd, data->tx_status.dst,
 					  data->tx_status.data,
 					  data->tx_status.data_len,
@@ -2241,7 +2254,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 		}
 		break;
 	case EVENT_EAPOL_TX_STATUS:
-		hapd = switch_link_hapd(hapd, data->eapol_tx_status.link_id);
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_EAPOL_TX_STATUS %d", __func__, __LINE__);
 		hostapd_eapol_tx_status(hapd, data->eapol_tx_status.dst,
 					data->eapol_tx_status.data,
 					data->eapol_tx_status.data_len,
@@ -2259,6 +2272,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 	case EVENT_RX_MGMT:
 		if (!data->rx_mgmt.frame)
 			break;
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_RX_MGMT %d", __func__, __LINE__);
 #ifdef NEED_AP_MLME
 		hostapd_mgmt_rx(hapd, &data->rx_mgmt);
 #else /* NEED_AP_MLME */
@@ -2269,6 +2283,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 		if (data->rx_probe_req.sa == NULL ||
 		    data->rx_probe_req.ie == NULL)
 			break;
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_RX_PROBE_REQ %d", __func__, __LINE__);
 		hostapd_probe_req_rx(hapd, data->rx_probe_req.sa,
 				     data->rx_probe_req.da,
 				     data->rx_probe_req.bssid,
@@ -2277,9 +2292,11 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 				     data->rx_probe_req.ssi_signal);
 		break;
 	case EVENT_NEW_STA:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_NEW_STA %d", __func__, __LINE__);
 		hostapd_event_new_sta(hapd, data->new_sta.addr);
 		break;
 	case EVENT_EAPOL_RX:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_EAPOL_RX %d", __func__, __LINE__);
 		hostapd_event_eapol_rx(hapd, data->eapol_rx.src,
 				       data->eapol_rx.data,
 				       data->eapol_rx.data_len,
@@ -2300,6 +2317,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 			}
 		}
 #endif /* CONFIG_IEEE80211BE */
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_ASSOC %d", __func__, __LINE__);
 		hostapd_notif_assoc(hapd, data->assoc_info.addr,
 				    data->assoc_info.req_ies,
 				    data->assoc_info.req_ies_len,
@@ -2324,6 +2342,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 			}
 		}
 #endif /* CONFIG_IEEE80211BE */
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_UPDATE_DH %d", __func__, __LINE__);
 		hostapd_notif_update_dh_ie(hapd, data->update_dh.peer,
 					   data->update_dh.ie,
 					   data->update_dh.ie_len,
@@ -2331,23 +2350,28 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 		break;
 #endif /* CONFIG_OWE */
 	case EVENT_DISASSOC:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_DISASSOC %d", __func__, __LINE__);
 		if (data)
 			hostapd_notif_disassoc(hapd, data->disassoc_info.addr);
 		break;
 	case EVENT_DEAUTH:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_DEAUTH %d", __func__, __LINE__);
 		if (data)
 			hostapd_notif_disassoc(hapd, data->deauth_info.addr);
 		break;
 	case EVENT_STATION_LOW_ACK:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_STATION_LOW_ACK %d", __func__, __LINE__);
 		if (!data)
 			break;
 		hostapd_event_sta_low_ack(hapd, data->low_ack.addr);
 		break;
 	case EVENT_AUTH:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_AUTH %d", __func__, __LINE__);
 		hostapd_notif_auth(hapd, &data->auth);
 		break;
 	case EVENT_CH_SWITCH_STARTED:
 	case EVENT_CH_SWITCH:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_CH_SWITCH %d", __func__, __LINE__);
 		if (!data)
 			break;
 		hostapd_event_ch_switch(hapd, data->ch_switch.freq,
@@ -2360,6 +2384,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 					event == EVENT_CH_SWITCH);
 		break;
 	case EVENT_CONNECT_FAILED_REASON:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_CONNECT_FAILED_REASON %d", __func__, __LINE__);
 		if (!data)
 			break;
 		hostapd_event_connect_failed_reason(
@@ -2413,6 +2438,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 		break;
 #endif /* NEED_AP_MLME */
 	case EVENT_INTERFACE_ENABLED:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_INTERFACE_ENABLED %d", __func__, __LINE__);
 		wpa_msg(hapd->msg_ctx, MSG_INFO, INTERFACE_ENABLED);
 		if (hapd->disabled && hapd->started) {
 			hapd->disabled = 0;
@@ -2446,6 +2472,7 @@ void wpa_supplicant_event(void *ctx, enum wpa_event_type event,
 		break;
 #endif /* CONFIG_ACS */
 	case EVENT_STATION_OPMODE_CHANGED:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi EVENT_STATION_OPMODE_CHANGED %d", __func__, __LINE__);
 		hostapd_event_sta_opmode_changed(hapd, data->sta_opmode.addr,
 						 data->sta_opmode.smps_mode,
 						 data->sta_opmode.chan_width,

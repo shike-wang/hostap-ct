@@ -292,6 +292,7 @@ int hostapd_set_sta_flags(struct hostapd_data *hapd, struct sta_info *sta)
 		set_flags |= WPA_STA_AUTHORIZED;
 	flags_or = total_flags & set_flags;
 	flags_and = total_flags | ~set_flags;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 	return hostapd_sta_set_flags(hapd, sta->addr, total_flags,
 				     flags_or, flags_and);
 }

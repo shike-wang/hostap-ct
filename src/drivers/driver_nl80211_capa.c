@@ -462,6 +462,9 @@ static void wiphy_info_cipher_suites(struct wiphy_info_data *info,
 		case RSN_CIPHER_SUITE_CCMP:
 			info->capa->enc |= WPA_DRIVER_CAPA_ENC_CCMP;
 			break;
+		case RSN_CIPHER_SUITE_SMS4:
+			info->capa->enc |= WPA_DRIVER_CAPA_KEY_MGMT_WAPI;
+			break;
 		case RSN_CIPHER_SUITE_GCMP:
 			info->capa->enc |= WPA_DRIVER_CAPA_ENC_GCMP;
 			break;

@@ -464,6 +464,7 @@ u8 * hostapd_eid_ext_capab(struct hostapd_data *hapd, u8 *eid,
 
 	if (len < hapd->iface->extended_capa_len)
 		len = hapd->iface->extended_capa_len;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	*pos++ = WLAN_EID_EXT_CAPAB;
 	*pos++ = len;

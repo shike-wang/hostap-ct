@@ -238,8 +238,12 @@ static inline int hostapd_drv_set_acl(struct hostapd_data *hapd,
 static inline int hostapd_drv_set_ap(struct hostapd_data *hapd,
 				     struct wpa_driver_ap_params *params)
 {
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
+
 	if (hapd->driver == NULL || hapd->driver->set_ap == NULL)
 		return 0;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi calling hapd->driver->set_ap %d", __func__, __LINE__);
 	return hapd->driver->set_ap(hapd->drv_priv, params);
 }
 

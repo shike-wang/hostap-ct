@@ -1244,6 +1244,7 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first,
 
 	wpa_printf(MSG_DEBUG, "%s(hapd=%p (%s), first=%d)",
 		   __func__, hapd, conf->iface, first);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  %d", __func__, __LINE__);
 
 #ifdef EAP_SERVER_TNC
 	if (conf->tnc && tncs_global_init() < 0) {

@@ -5148,6 +5148,28 @@ int wpa_sm_set_ap_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
 	return 0;
 }
 
+int wpa_sm_set_ap_wapi_ie(struct wpa_sm *sm, const u8 *ie, size_t len)
+{
+	if (!sm)
+		return -1;
+
+	os_free(sm->ap_wapi_ie);
+	if (!ie || len == 0) {
+		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG, "WPA: clearing AP WAPI");
+		sm->ap_wapi_ie = NULL;
+		sm->ap_wapi_id_len = 0;
+	} else {
+		wpa_hexdump(MSG_DEBUG, "WPA: set AP WAPI", ie, len);
+		sm->ap_wapi_ie = os_memdup(ie, len);
+		if (!sm->ap_wapi_ie)
+			return -1;
+
+		sm->ap_wapi_id_len = len;
+	}
+
+	return 0;
+}
+
 
 /**
  * wpa_sm_parse_own_wpa_ie - Parse own WPA/RSN IE

@@ -1658,6 +1658,8 @@ static int wpa_driver_wext_get_range(void *priv)
 			WPA_DRIVER_AUTH_SHARED |
 			WPA_DRIVER_AUTH_LEAP;
 		drv->capa.max_scan_ssids = 1;
+		drv->capa.enc |= WPA_DRIVER_CAPA_KEY_MGMT_WAPI;
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi drv->capa.enc |= WPA_DRIVER_CAPA_KEY_MGMT_WAPI; %d", __func__, __LINE__);
 
 		wpa_printf(MSG_DEBUG, "  capabilities: key_mgmt 0x%x enc 0x%x "
 			   "flags 0x%llx",

@@ -629,6 +629,7 @@ static void sme_send_authentication(struct wpa_supplicant *wpa_s,
 		wpas_connect_work_done(wpa_s);
 		return;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi ssid->key_mgmt=0x%x bss=%p %d", __func__, ssid->key_mgmt, bss,__LINE__);
 
 	skip_auth = wpa_s->conf->reassoc_same_bss_optim &&
 		wpa_s->reassoc_same_bss;
@@ -776,6 +777,19 @@ static void sme_send_authentication(struct wpa_supplicant *wpa_s,
 		 */
 		wpa_supplicant_set_non_wpa_policy(wpa_s, ssid);
 		wpa_s->sme.assoc_req_ie_len = 0;
+	} else if ((ssid->key_mgmt & (WPA_KEY_MGMT_WAPI_PSK | WPA_KEY_MGMT_WAPI_CERT)) && bss) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi TODO %d", __func__,  __LINE__);
+		wpa_s->sme.assoc_req_ie_len = sizeof(wpa_s->sme.assoc_req_ie);
+		if (wpa_supplicant_set_suites(wpa_s, bss, ssid,
+					      wpa_s->sme.assoc_req_ie,
+					      &wpa_s->sme.assoc_req_ie_len,
+					      false)) {
+			wpa_msg(wpa_s, MSG_WARNING, "SME: Failed to set WPA "
+				"key management and encryption suites");
+			wpas_connect_work_done(wpa_s);
+			return;
+		}
+
 	} else if (wpa_key_mgmt_wpa_any(ssid->key_mgmt)) {
 		wpa_s->sme.assoc_req_ie_len = sizeof(wpa_s->sme.assoc_req_ie);
 		if (wpa_supplicant_set_suites(wpa_s, NULL, ssid,

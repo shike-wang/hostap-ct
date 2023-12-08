@@ -484,6 +484,10 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 			elems->rsn_ie = pos;
 			elems->rsn_ie_len = elen;
 			break;
+		case WLAN_EID_BSS_AC_ACCESS_DELAY:
+			elems->wapi_ie = pos;
+			elems->wapi_ie_len = elen;
+			break;
 		case WLAN_EID_RSNX:
 			elems->rsnxe = pos;
 			elems->rsnxe_len = elen;

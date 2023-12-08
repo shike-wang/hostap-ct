@@ -117,8 +117,8 @@ struct wpa_sm {
 	size_t assoc_wpa_ie_len;
 	u8 *assoc_rsnxe; /* Own RSNXE from (Re)AssocReq */
 	size_t assoc_rsnxe_len;
-	u8 *ap_wpa_ie, *ap_rsn_ie, *ap_rsnxe;
-	size_t ap_wpa_ie_len, ap_rsn_ie_len, ap_rsnxe_len;
+	u8 *ap_wpa_ie, *ap_rsn_ie, *ap_rsnxe, *ap_wapi_ie;
+	size_t ap_wpa_ie_len, ap_rsn_ie_len, ap_rsnxe_len, ap_wapi_id_len;
 
 #ifdef CONFIG_TDLS
 	struct wpa_tdls_peer *tdls;

@@ -402,6 +402,7 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 		akmp = WPA_KEY_MGMT_OWE;
 	}
 #endif /* CONFIG_OWE */
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (pmk_len == 0) {
 		wpa_printf(MSG_ERROR, "WPA: No PMK set for PTK derivation");
@@ -418,6 +419,7 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 		os_memcpy(data, addr2, ETH_ALEN);
 		os_memcpy(data + ETH_ALEN, addr1, ETH_ALEN);
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (os_memcmp(nonce1, nonce2, WPA_NONCE_LEN) < 0) {
 		os_memcpy(data + 2 * ETH_ALEN, nonce1, WPA_NONCE_LEN);
@@ -433,7 +435,7 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 		os_memcpy(data + 2 * ETH_ALEN + 2 * WPA_NONCE_LEN, z, z_len);
 		data_len += z_len;
 	}
-
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 	if (kdk_len > WPA_KDK_MAX_LEN) {
 		wpa_printf(MSG_ERROR,
 			   "WPA: KDK len=%zu exceeds max supported len",
@@ -452,6 +454,7 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 		return -1;
 	}
 	ptk_len = ptk->kck_len + ptk->kek_len + ptk->tk_len + ptk->kdk_len;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (wpa_key_mgmt_sha384(akmp)) {
 #if defined(CONFIG_SUITEB192) || defined(CONFIG_FILS)
@@ -1727,7 +1730,7 @@ int pasn_auth_frame_hash(int akmp, int cipher, const u8 *data, size_t len,
 #endif /* CONFIG_PASN */
 
 
-static int rsn_selector_to_bitfield(const u8 *s)
+int rsn_selector_to_bitfield(const u8 *s)
 {
 	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_NONE)
 		return WPA_CIPHER_NONE;
@@ -1749,13 +1752,17 @@ static int rsn_selector_to_bitfield(const u8 *s)
 		return WPA_CIPHER_BIP_GMAC_256;
 	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_BIP_CMAC_256)
 		return WPA_CIPHER_BIP_CMAC_256;
+	if (RSN_SELECTOR_GET(s) == WPA_AUTH_KEY_MGMT_SMS4)
+		return WPA_CIPHER_SMS4;
+	if (RSN_SELECTOR_GET(s) == WPA_CIPHER_SUITE_SMS4)
+		return WPA_CIPHER_SMS4;
 	if (RSN_SELECTOR_GET(s) == RSN_CIPHER_SUITE_NO_GROUP_ADDRESSED)
 		return WPA_CIPHER_GTK_NOT_USED;
 	return 0;
 }
 
 
-static int rsn_key_mgmt_to_bitfield(const u8 *s)
+int rsn_key_mgmt_to_bitfield(const u8 *s)
 {
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_UNSPEC_802_1X)
 		return WPA_KEY_MGMT_IEEE8021X;
@@ -1791,6 +1798,8 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 		return WPA_KEY_MGMT_IEEE8021X_SUITE_B_192;
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_FILS_SHA256)
 		return WPA_KEY_MGMT_FILS_SHA256;
+	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SMS4)
+		return WPA_KEY_MGMT_WAPI_PSK;
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_FILS_SHA384)
 		return WPA_KEY_MGMT_FILS_SHA384;
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_FT_FILS_SHA256)
@@ -1828,6 +1837,8 @@ int wpa_cipher_valid_mgmt_group(int cipher)
 		cipher == WPA_CIPHER_AES_128_CMAC ||
 		cipher == WPA_CIPHER_BIP_GMAC_128 ||
 		cipher == WPA_CIPHER_BIP_GMAC_256 ||
+		cipher == WPA_CIPHER_SMS4 ||
+		cipher == WPA_CIPHER_SMS4 ||
 		cipher == WPA_CIPHER_BIP_CMAC_256;
 }
 
@@ -2712,6 +2723,8 @@ const char * wpa_cipher_txt(int cipher)
 		return "BIP-GMAC-256";
 	case WPA_CIPHER_BIP_CMAC_256:
 		return "BIP-CMAC-256";
+	case WPA_CIPHER_SMS4:
+		return "WPA_CIPHER_SMS4";
 	case WPA_CIPHER_GTK_NOT_USED:
 		return "GTK_NOT_USED";
 	default:
@@ -3026,9 +3039,13 @@ int wpa_cipher_key_len(int cipher)
 	case WPA_CIPHER_AES_128_CMAC:
 	case WPA_CIPHER_BIP_GMAC_128:
 		return 16;
+	case WPA_CIPHER_SMS4:
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4 KEY LEN=16", __func__);
+		return 16;
 	case WPA_CIPHER_TKIP:
 		return 32;
 	default:
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi ERROR KEY LEN=0", __func__);
 		return 0;
 	}
 }
@@ -3044,6 +3061,7 @@ int wpa_cipher_rsc_len(int cipher)
 	case WPA_CIPHER_TKIP:
 		return 6;
 	default:
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi ERROR RSC cipher=%d LEN=0", __func__, cipher);
 		return 0;
 	}
 }
@@ -3070,6 +3088,11 @@ enum wpa_alg wpa_cipher_to_alg(int cipher)
 		return WPA_ALG_BIP_GMAC_256;
 	case WPA_CIPHER_BIP_CMAC_256:
 		return WPA_ALG_BIP_CMAC_256;
+	case WPA_CIPHER_SMS4: 
+		{
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4-->WPA_ALG_SMS4", __func__);
+			return WPA_ALG_SMS4;
+		}
 	default:
 		return WPA_ALG_NONE;
 	}
@@ -3082,12 +3105,14 @@ int wpa_cipher_valid_pairwise(int cipher)
 	return cipher == WPA_CIPHER_CCMP_256 ||
 		cipher == WPA_CIPHER_GCMP_256 ||
 		cipher == WPA_CIPHER_CCMP ||
+		cipher == WPA_CIPHER_SMS4 ||
 		cipher == WPA_CIPHER_GCMP;
 #else /* CONFIG_NO_TKIP */
 	return cipher == WPA_CIPHER_CCMP_256 ||
 		cipher == WPA_CIPHER_GCMP_256 ||
 		cipher == WPA_CIPHER_CCMP ||
 		cipher == WPA_CIPHER_GCMP ||
+		cipher == WPA_CIPHER_SMS4 ||
 		cipher == WPA_CIPHER_TKIP;
 #endif /* CONFIG_NO_TKIP */
 }
@@ -3120,6 +3145,11 @@ u32 wpa_cipher_to_suite(int proto, int cipher)
 		return RSN_CIPHER_SUITE_BIP_GMAC_256;
 	if (cipher & WPA_CIPHER_BIP_CMAC_256)
 		return RSN_CIPHER_SUITE_BIP_CMAC_256;
+	if (cipher & WPA_CIPHER_SMS4) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4-->RSN_CIPHER_SUITE_SMS4", __func__);
+		return RSN_CIPHER_SUITE_SMS4;
+	}
 	return 0;
 }
 
@@ -3148,6 +3178,12 @@ int rsn_cipher_put_suites(u8 *start, int ciphers)
 		RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_TKIP);
 		pos += RSN_SELECTOR_LEN;
 	}
+	if (ciphers & WPA_CIPHER_SMS4) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4", __func__);
+		RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_SMS4);
+		pos += RSN_SELECTOR_LEN;
+	}
 	if (ciphers & WPA_CIPHER_NONE) {
 		RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_NONE);
 		pos += RSN_SELECTOR_LEN;
@@ -3173,6 +3209,12 @@ int wpa_cipher_put_suites(u8 *start, int ciphers)
 		RSN_SELECTOR_PUT(pos, WPA_CIPHER_SUITE_NONE);
 		pos += WPA_SELECTOR_LEN;
 	}
+	if (ciphers & WPA_CIPHER_SMS4) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4", __func__);
+		RSN_SELECTOR_PUT(pos, WPA_CIPHER_SUITE_SMS4);
+		pos += WPA_SELECTOR_LEN;
+	}
 
 	return (pos - start) / RSN_SELECTOR_LEN;
 }
@@ -3190,6 +3232,11 @@ int wpa_pick_pairwise_cipher(int ciphers, int none_allowed)
 		return WPA_CIPHER_GCMP;
 	if (ciphers & WPA_CIPHER_TKIP)
 		return WPA_CIPHER_TKIP;
+	if (ciphers & WPA_CIPHER_SMS4) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4", __func__);
+		return WPA_CIPHER_SMS4;
+	}
 	if (none_allowed && (ciphers & WPA_CIPHER_NONE))
 		return WPA_CIPHER_NONE;
 	return -1;
@@ -3210,6 +3257,10 @@ int wpa_pick_group_cipher(int ciphers)
 		return WPA_CIPHER_GTK_NOT_USED;
 	if (ciphers & WPA_CIPHER_TKIP)
 		return WPA_CIPHER_TKIP;
+	if (ciphers & WPA_CIPHER_SMS4) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4", __func__);
+		return WPA_CIPHER_SMS4;
+	}
 	return -1;
 }
 
@@ -3238,6 +3289,10 @@ int wpa_parse_cipher(const char *value)
 			val |= WPA_CIPHER_CCMP_256;
 		else if (os_strcmp(start, "GCMP-256") == 0)
 			val |= WPA_CIPHER_GCMP_256;
+		else if (os_strcmp(start, "SMS4") == 0) {
+			val |= WPA_CIPHER_SMS4;
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4", __func__);
+		}
 		else if (os_strcmp(start, "CCMP") == 0)
 			val |= WPA_CIPHER_CCMP;
 		else if (os_strcmp(start, "GCMP") == 0)
@@ -3293,6 +3348,15 @@ int wpa_write_ciphers(char *start, char *end, int ciphers, const char *delim)
 	}
 	if (ciphers & WPA_CIPHER_GCMP_256) {
 		ret = os_snprintf(pos, end - pos, "%sGCMP-256",
+				  pos == start ? "" : delim);
+		if (os_snprintf_error(end - pos, ret))
+			return -1;
+		pos += ret;
+	}
+	if (ciphers & WPA_CIPHER_SMS4) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4", __func__);
+		ret = os_snprintf(pos, end - pos, "%sSMS4",
 				  pos == start ? "" : delim);
 		if (os_snprintf_error(end - pos, ret))
 			return -1;
@@ -3369,6 +3433,11 @@ int wpa_select_ap_group_cipher(int wpa, int wpa_pairwise, int rsn_pairwise)
 	if (wpa & 2)
 		pairwise |= rsn_pairwise;
 
+	if (pairwise & WPA_CIPHER_SMS4) {
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi WPA_CIPHER_SMS4", __func__);
+		return WPA_CIPHER_SMS4;
+	}
 	if (pairwise & WPA_CIPHER_TKIP)
 		return WPA_CIPHER_TKIP;
 	if ((pairwise & (WPA_CIPHER_CCMP | WPA_CIPHER_GCMP)) == WPA_CIPHER_GCMP)

@@ -397,6 +397,7 @@ static void wpa_rekey_ptk(void *eloop_ctx, void *timeout_ctx)
 {
 	struct wpa_authenticator *wpa_auth = eloop_ctx;
 	struct wpa_state_machine *sm = timeout_ctx;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	wpa_auth_logger(wpa_auth, wpa_auth_get_spa(sm), LOGGER_DEBUG,
 			"rekeying PTK");
@@ -707,7 +708,7 @@ wpa_auth_sta_init(struct wpa_authenticator *wpa_auth, const u8 *addr,
 #ifdef CONFIG_IEEE80211BE
 	sm->mld_assoc_link_id = -1;
 #endif /* CONFIG_IEEE80211BE */
-
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi set wpa_authenticator %d", __func__, __LINE__);
 	return sm;
 }
 
@@ -739,6 +740,7 @@ int wpa_auth_sta_associated(struct wpa_authenticator *wpa_auth,
 		return 0;
 	}
 #endif /* CONFIG_FILS */
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (sm->started) {
 		os_memset(&sm->key_replay, 0, sizeof(sm->key_replay));
@@ -1510,6 +1512,7 @@ continue_processing:
 	sm->EAPOLKeyPairwise = !!(key_info & WPA_KEY_INFO_KEY_TYPE);
 	sm->EAPOLKeyRequest = !!(key_info & WPA_KEY_INFO_REQUEST);
 	os_memcpy(sm->SNonce, key->key_nonce, WPA_NONCE_LEN);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 	wpa_sm_step(sm);
 }
 
@@ -1577,6 +1580,7 @@ static void wpa_send_eapol_timeout(void *eloop_ctx, void *timeout_ctx)
 	wpa_auth_logger(wpa_auth, wpa_auth_get_spa(sm), LOGGER_DEBUG,
 			"EAPOL-Key timeout");
 	sm->TimeoutEvt = true;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 	wpa_sm_step(sm);
 }
 
@@ -1916,13 +1920,24 @@ void wpa_remove_ptk(struct wpa_state_machine *sm)
 	eloop_cancel_timeout(wpa_rekey_ptk, sm->wpa_auth, sm);
 }
 
-
+static const char *event_name[] = {
+	"WPA_AUTH",
+	"WPA_ASSOC",
+	"WPA_DISASSOC",
+	"WPA_DEAUTH",
+	"WPA_REAUTH",
+	"WPA_REAUTH_EAPOL",
+	"WPA_ASSOC_FT",
+	"WPA_ASSOC_FILS",
+	"WPA_DRV_STA_REMOVED"
+};
 int wpa_auth_sm_event(struct wpa_state_machine *sm, enum wpa_event event)
 {
 	int remove_ptk = 1;
 
 	if (!sm)
 		return -1;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi event=%s %d", __func__, event_name[event], __LINE__);
 
 	wpa_auth_vlogger(sm->wpa_auth, wpa_auth_get_spa(sm), LOGGER_DEBUG,
 			 "event %d notification", event);
@@ -1968,6 +1983,7 @@ int wpa_auth_sm_event(struct wpa_state_machine *sm, enum wpa_event event)
 			if (wpa_sm_step(sm) == 1)
 				return 1; /* should not really happen */
 			sm->Init = false;
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi event=[%s] %d", __func__,event_name[event],  __LINE__);
 			sm->AuthenticationRequest = true;
 			break;
 		}
@@ -2485,7 +2501,7 @@ static int wpa_derive_ptk(struct wpa_state_machine *sm, const u8 *snonce,
 	size_t z_len = 0, kdk_len;
 	int akmp;
 	int ret;
-
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 	if (sm->wpa_auth->conf.force_kdk_derivation ||
 	    (sm->wpa_auth->conf.secure_ltf &&
 	     ieee802_11_rsnx_capab(sm->rsnxe, WLAN_RSNX_CAPAB_SECURE_LTF)))
@@ -2495,6 +2511,7 @@ static int wpa_derive_ptk(struct wpa_state_machine *sm, const u8 *snonce,
 
 #ifdef CONFIG_IEEE80211R_AP
 	if (wpa_key_mgmt_ft(sm->wpa_key_mgmt)) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 		if (sm->ft_completed) {
 			u8 ptk_name[WPA_PMK_NAME_LEN];
 
@@ -2537,6 +2554,7 @@ static int wpa_derive_ptk(struct wpa_state_machine *sm, const u8 *snonce,
 		z_len = wpabuf_len(sm->dpp_z);
 	}
 #endif /* CONFIG_DPP2 */
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	akmp = sm->wpa_key_mgmt;
 	if (force_sha256)
@@ -3269,8 +3287,10 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 	sm->EAPOLKeyReceived = false;
 	sm->update_snonce = false;
 	os_memset(&PTK, 0, sizeof(PTK));
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	mic_len = wpa_mic_len(sm->wpa_key_mgmt, sm->pmk_len);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi sm->wpa_key_mgmt=0x%x mic_len=%d %d", __func__,sm->wpa_key_mgmt, mic_len, __LINE__);
 
 	/* WPA with IEEE 802.1X: use the derived PMK from EAP
 	 * WPA-PSK: iterate through possible PSKs and select the one matching
@@ -3278,11 +3298,15 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 	for (;;) {
 		if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) &&
 		    !wpa_key_mgmt_sae(sm->wpa_key_mgmt)) {
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi sm->wpa_key_mgmt=%d %d", __func__, sm->wpa_key_mgmt, __LINE__);
 			pmk = wpa_auth_get_psk(sm->wpa_auth, sm->addr,
 					       sm->p2p_dev_addr, pmk, &pmk_len,
 					       &vlan_id);
-			if (!pmk)
+			if (!pmk) {
+				wpa_printf(MSG_ERROR, "%s: shikew_wapi break %d", __func__, __LINE__);
 				break;
+			}
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi psk_found %d", __func__, __LINE__);
 			psk_found = 1;
 #ifdef CONFIG_IEEE80211R_AP
 			if (wpa_key_mgmt_ft_psk(sm->wpa_key_mgmt)) {
@@ -3293,18 +3317,23 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 		} else {
 			pmk = sm->PMK;
 			pmk_len = sm->pmk_len;
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi pmk_len=%d %d", __func__, pmk_len, __LINE__);
 		}
 
 		if ((!pmk || !pmk_len) && sm->pmksa) {
 			wpa_printf(MSG_DEBUG, "WPA: Use PMK from PMKSA cache");
 			pmk = sm->pmksa->pmk;
 			pmk_len = sm->pmksa->pmk_len;
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi pmk_len=%d %d", __func__, pmk_len, __LINE__);
 		}
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 		if (wpa_derive_ptk(sm, sm->SNonce, pmk, pmk_len, &PTK,
 				   owe_ptk_workaround == 2, pmk_r0, pmk_r1,
-				   pmk_r0_name, &key_len) < 0)
+				   pmk_r0_name, &key_len) < 0) {
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 			break;
+			}
 
 		if (mic_len &&
 		    wpa_verify_key_mic(sm->wpa_key_mgmt, pmk_len, &PTK,
@@ -3551,6 +3580,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 
 	sm->pending_1_of_4_timeout = 0;
 	eloop_cancel_timeout(wpa_send_eapol_timeout, sm->wpa_auth, sm);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) && sm->PMK != pmk) {
 		/* PSK may have changed from the previous choice, so update
@@ -4546,6 +4576,21 @@ SM_STEP(WPA_PTK)
 	struct wpa_authenticator *wpa_auth = sm->wpa_auth;
 	struct wpa_auth_config *conf = &wpa_auth->conf;
 
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->Init=%d %d", __func__, sm->Init, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->DeauthenticationRequest=%d %d", __func__, sm->DeauthenticationRequest, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->AuthenticationRequest=%d %d", __func__, sm->AuthenticationRequest, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->ReAuthenticationRequest=%d %d", __func__, sm->ReAuthenticationRequest, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->Disconnect=%d %d", __func__, sm->Disconnect, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->disconnect_reason=%d %d", __func__, sm->disconnect_reason, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->TimeoutCtr=%d %d", __func__, sm->TimeoutCtr, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->GTimeoutCtr=%d %d", __func__, sm->GTimeoutCtr, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->TimeoutEvt=%d %d", __func__, sm->TimeoutEvt, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->EAPOLKeyReceived=%d %d", __func__, sm->EAPOLKeyReceived, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->EAPOLKeyPairwise=%d %d", __func__, sm->EAPOLKeyPairwise, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->EAPOLKeyRequest=%d %d", __func__, sm->EAPOLKeyRequest, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->MICVerified=%d %d", __func__, sm->MICVerified, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->GUpdateStationKeys=%d %d", __func__, sm->GUpdateStationKeys, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK) sm->wpa_ptk_state=%d %d", __func__, sm->wpa_ptk_state, __LINE__);
 	if (sm->Init)
 		SM_ENTER(WPA_PTK, INITIALIZE);
 	else if (sm->Disconnect
@@ -4891,6 +4936,15 @@ SM_STATE(WPA_PTK_GROUP, KEYERROR)
 
 SM_STEP(WPA_PTK_GROUP)
 {
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK_GROUP) sm->Init=%d %d", __func__, sm->Init, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK_GROUP) sm->PtkGroupInit=%d %d", __func__, sm->PtkGroupInit, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK_GROUP) sm->wpa_ptk_group_state=%d %d", __func__, sm->wpa_ptk_group_state, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK_GROUP) sm->wpa=%d %d", __func__, sm->wpa, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK_GROUP) sm->GUpdateStationKeys=%d %d", __func__, sm->GUpdateStationKeys, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK_GROUP) sm->PInitAKeys=%d %d", __func__, sm->PInitAKeys, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK_GROUP) sm->EAPOLKeyReceived=%d %d", __func__, sm->EAPOLKeyReceived, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK_GROUP) sm->EAPOLKeyRequest=%d %d", __func__, sm->EAPOLKeyRequest, __LINE__);
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP(WPA_PTK_GROUP) sm->GTimeoutCtr=%d %d", __func__, sm->GTimeoutCtr, __LINE__);
 	if (sm->Init || sm->PtkGroupInit) {
 		SM_ENTER(WPA_PTK_GROUP, IDLE);
 		sm->PtkGroupInit = false;
@@ -5018,6 +5072,7 @@ static int wpa_group_update_sta(struct wpa_state_machine *sm, void *ctx)
 
 	sm->group->GKeyDoneStations++;
 	sm->GUpdateStationKeys = true;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	wpa_sm_step(sm);
 	return 0;
@@ -5282,21 +5337,31 @@ static int wpa_group_setkeysdone(struct wpa_authenticator *wpa_auth,
 static void wpa_group_sm_step(struct wpa_authenticator *wpa_auth,
 			      struct wpa_group *group)
 {
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi  %d", __func__, __LINE__);
 	if (group->GInit) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi call wpa_group_gtk_init %d", __func__, __LINE__);
 		wpa_group_gtk_init(wpa_auth, group);
 	} else if (group->wpa_group_state == WPA_GROUP_FATAL_FAILURE) {
 		/* Do not allow group operations */
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi Do not allow group operations %d", __func__, __LINE__);
 	} else if (group->wpa_group_state == WPA_GROUP_GTK_INIT &&
 		   group->GTKAuthenticator) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi call wpa_group_setkeysdone %d", __func__, __LINE__);
 		wpa_group_setkeysdone(wpa_auth, group);
 	} else if (group->wpa_group_state == WPA_GROUP_SETKEYSDONE &&
 		   group->GTKReKey) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi call wpa_group_setkeys %d", __func__, __LINE__);
 		wpa_group_setkeys(wpa_auth, group);
 	} else if (group->wpa_group_state == WPA_GROUP_SETKEYS) {
-		if (group->GKeyDoneStations == 0)
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi call group->wpa_group_state == WPA_GROUP_SETKEYS %d", __func__, __LINE__);
+		if (group->GKeyDoneStations == 0) {
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi call wpa_group_setkeysdone %d", __func__, __LINE__);
 			wpa_group_setkeysdone(wpa_auth, group);
-		else if (group->GTKReKey)
+		}
+		else if (group->GTKReKey) {
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi call wpa_group_setkeys %d", __func__, __LINE__);
 			wpa_group_setkeys(wpa_auth, group);
+		}
 	}
 }
 
@@ -5305,6 +5370,7 @@ static int wpa_sm_step(struct wpa_state_machine *sm)
 {
 	if (!sm)
 		return 0;
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	if (sm->in_step_loop) {
 		/* This should not happen, but if it does, make sure we do not
@@ -5313,6 +5379,7 @@ static int wpa_sm_step(struct wpa_state_machine *sm)
 		wpa_printf(MSG_ERROR, "WPA: wpa_sm_step() called recursively");
 		return 0;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 
 	sm->in_step_loop = 1;
 	do {
@@ -5322,13 +5389,19 @@ static int wpa_sm_step(struct wpa_state_machine *sm)
 		sm->changed = false;
 		sm->wpa_auth->group->changed = false;
 
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP_RUN(WPA_PTK) %d", __func__, __LINE__);
+
 		SM_STEP_RUN(WPA_PTK);
 		if (sm->pending_deinit)
 			break;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi SM_STEP_RUN(WPA_PTK_GROUP) %d", __func__, __LINE__);
 		SM_STEP_RUN(WPA_PTK_GROUP);
 		if (sm->pending_deinit)
 			break;
 		wpa_group_sm_step(sm->wpa_auth, sm->group);
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi sm->changed=%d sm->wpa_auth->group->changed=%d, %d", __func__, sm->changed, sm->wpa_auth->group->changed, __LINE__);
 	} while (sm->changed || sm->wpa_auth->group->changed);
 	sm->in_step_loop = 0;
 
@@ -5346,6 +5419,8 @@ static int wpa_sm_step(struct wpa_state_machine *sm)
 static void wpa_sm_call_step(void *eloop_ctx, void *timeout_ctx)
 {
 	struct wpa_state_machine *sm = eloop_ctx;
+	
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__, __LINE__);
 	wpa_sm_step(sm);
 }
 

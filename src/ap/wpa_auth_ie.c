@@ -72,6 +72,11 @@ static int wpa_write_wpa_ie(struct wpa_auth_config *conf, u8 *buf, size_t len)
 		pos += WPA_SELECTOR_LEN;
 		num_suites++;
 	}
+	if (conf->wpa_key_mgmt & WPA_KEY_MGMT_WAPI_PSK) {
+		RSN_SELECTOR_PUT(pos, WPA_AUTH_KEY_MGMT_SMS4);
+		pos += WPA_SELECTOR_LEN;
+		num_suites++;
+	}
 
 	if (num_suites == 0) {
 		wpa_printf(MSG_DEBUG, "Invalid key management type (%d).",
@@ -314,6 +319,11 @@ int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
 		num_suites++;
 	}
 #endif /* CONFIG_RSN_TESTING */
+	if (conf->wpa_key_mgmt & WPA_KEY_MGMT_WAPI_PSK) {
+		RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SMS4);
+		pos += RSN_SELECTOR_LEN;
+		num_suites++;
+	}
 
 	if (num_suites == 0) {
 		wpa_printf(MSG_DEBUG, "Invalid key management type (%d).",
@@ -1110,7 +1120,14 @@ int wpa_auth_uses_ocv(struct wpa_state_machine *sm)
 }
 
 #endif /* CONFIG_OCV */
+extern u8 * hostapd_wapi_id_set(struct hostapd_data *hapd, u8 *tailpos);
+u8 * wpa_auth_write_assoc_resp_wapi(struct wpa_state_machine *sm,
+				   u8 *pos, size_t max_len,
+				   const u8 *req_ies, size_t req_ies_len)
+{
 
+	return hostapd_wapi_id_set(NULL, pos);
+}
 
 #ifdef CONFIG_OWE
 u8 * wpa_auth_write_assoc_resp_owe(struct wpa_state_machine *sm,

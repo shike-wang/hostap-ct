@@ -1442,6 +1442,10 @@ void wpas_set_mgmt_group_cipher(struct wpa_supplicant *wpa_s,
 		wpa_s->mgmt_group_cipher = WPA_CIPHER_BIP_CMAC_256;
 		wpa_dbg(wpa_s, MSG_DEBUG,
 			"WPA: using MGMT group cipher BIP-CMAC-256");
+	} else if (sel & WPA_CIPHER_SMS4) {
+		wpa_s->mgmt_group_cipher = WPA_CIPHER_SMS4;
+		wpa_dbg(wpa_s, MSG_DEBUG,
+			"WPA: using MGMT group cipher WPA_CIPHER_SMS4");
 	} else {
 		wpa_s->mgmt_group_cipher = 0;
 		wpa_dbg(wpa_s, MSG_DEBUG, "WPA: not using MGMT group cipher");
@@ -1684,7 +1688,7 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	struct wpa_ie_data ie;
 	int sel, proto;
 	enum sae_pwe sae_pwe;
-	const u8 *bss_wpa, *bss_rsn, *bss_rsnx, *bss_osen;
+	const u8 *bss_wpa, *bss_rsn, *bss_rsnx, *bss_osen, *bss_wapi;
 	bool wmm;
 
 	if (bss) {
@@ -1692,9 +1696,12 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 		bss_rsn = wpa_bss_get_ie(bss, WLAN_EID_RSN);
 		bss_rsnx = wpa_bss_get_ie(bss, WLAN_EID_RSNX);
 		bss_osen = wpa_bss_get_vendor_ie(bss, OSEN_IE_VENDOR_TYPE);
+		bss_wapi = wpa_bss_get_ie(bss, WLAN_EID_BSS_AC_ACCESS_DELAY);
 	} else {
 		bss_wpa = bss_rsn = bss_rsnx = bss_osen = NULL;
 	}
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi bss_rsn=%p bss_wapi=%p ssid->proto=0x%x %d",
+		__func__, bss_rsn, bss_wapi, __LINE__);
 
 	if (bss_rsn && (ssid->proto & WPA_PROTO_RSN) &&
 	    wpa_parse_wpa_ie(bss_rsn, 2 + bss_rsn[1], &ie) == 0 &&
@@ -1702,6 +1709,12 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	    (ie.key_mgmt & ssid->key_mgmt)) {
 		wpa_dbg(wpa_s, MSG_DEBUG, "RSN: using IEEE 802.11i/D9.0");
 		proto = WPA_PROTO_RSN;
+	} else if (bss_wapi/* && (ssid->proto & WPA_PROTO_WAPI) */&&
+	    wpa_parse_wapi_ie_rsn(bss_wapi, 2 + bss_wapi[1], &ie) == 0 /*&&
+	    matching_ciphers(ssid, &ie, bss->freq) &&
+	    (ie.key_mgmt & ssid->key_mgmt)*/) {
+		wpa_dbg(wpa_s, MSG_DEBUG, "RSN: using WAPI IEEE 802.11i/D9.0");
+		proto = WPA_PROTO_WAPI;
 	} else if (bss_wpa && (ssid->proto & WPA_PROTO_WPA) &&
 		   wpa_parse_wpa_ie(bss_wpa, 2 + bss_wpa[1], &ie) == 0 &&
 		   (ie.group_cipher & ssid->group_cipher) &&
@@ -1826,6 +1839,8 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 					 bss_wpa ? 2 + bss_wpa[1] : 0) ||
 		    wpa_sm_set_ap_rsn_ie(wpa_s->wpa, bss_rsn,
 					 bss_rsn ? 2 + bss_rsn[1] : 0) ||
+			wpa_sm_set_ap_wapi_ie(wpa_s->wpa, bss_wapi,
+					 bss_wapi ? 2 + bss_wapi[1] : 0) ||
 		    wpa_sm_set_ap_rsnxe(wpa_s->wpa, bss_rsnx,
 					bss_rsnx ? 2 + bss_rsnx[1] : 0))
 			return -1;
@@ -1835,6 +1850,14 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	wpa_s->group_cipher = WPA_CIPHER_NONE;
 	wpa_s->pairwise_cipher = WPA_CIPHER_NONE;
 #else /* CONFIG_NO_WPA */
+
+
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi TODO ie.group_cipher=0x%x ssid->group_cipher=0x%x %d",
+		__func__, ie.group_cipher, ssid->group_cipher, __LINE__);
+	// TODO 
+	ssid->group_cipher |= ie.group_cipher;
+
+	
 	sel = ie.group_cipher & ssid->group_cipher;
 	wpa_dbg(wpa_s, MSG_DEBUG,
 		"WPA: AP group 0x%x network profile group 0x%x; available group 0x%x",
@@ -1847,6 +1870,13 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	}
 	wpa_dbg(wpa_s, MSG_DEBUG, "WPA: using GTK %s",
 		wpa_cipher_txt(wpa_s->group_cipher));
+
+
+
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi TODO ie.pairwise_cipher=0x%x ssid->pairwise_cipher=0x%x %d",
+		__func__, ie.pairwise_cipher, ssid->pairwise_cipher, __LINE__);
+	// TODO 
+	ssid->pairwise_cipher |= ie.pairwise_cipher;
 
 	sel = ie.pairwise_cipher & ssid->pairwise_cipher;
 	wpa_dbg(wpa_s, MSG_DEBUG,
@@ -1861,6 +1891,15 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 	wpa_dbg(wpa_s, MSG_DEBUG, "WPA: using PTK %s",
 		wpa_cipher_txt(wpa_s->pairwise_cipher));
 #endif /* CONFIG_NO_WPA */
+
+
+
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi TODO ie.key_mgmt=0x%x ssid->key_mgmt=0x%x %d",
+		__func__, ie.key_mgmt, ssid->key_mgmt, __LINE__);
+	// TODO 
+	ssid->key_mgmt |= ie.key_mgmt;
+
+
 
 	sel = ie.key_mgmt & ssid->key_mgmt;
 #ifdef CONFIG_SAE
@@ -1991,7 +2030,14 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 		wpa_s->key_mgmt = WPA_KEY_MGMT_OWE;
 		wpa_dbg(wpa_s, MSG_DEBUG, "RSN: using KEY_MGMT OWE");
 #endif /* CONFIG_OWE */
-	} else {
+	} 
+	else if (sel & (WPA_KEY_MGMT_WAPI_PSK | WPA_KEY_MGMT_WAPI_CERT)) {
+		wpa_s->key_mgmt = WPA_KEY_MGMT_WAPI_PSK;
+		wpa_dbg(wpa_s, MSG_DEBUG, "RSN: using KEY_MGMT WAPI");
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi key_mgmt=0x%x pairwise_cipher=0x%x group_cipher=0x%x %d",
+			__func__, wpa_s->key_mgmt, wpa_s->pairwise_cipher, wpa_s->group_cipher, __LINE__);
+	}
+	else {
 		wpa_msg(wpa_s, MSG_WARNING, "WPA: Failed to select "
 			"authenticated key management type");
 		return -1;
@@ -2124,6 +2170,9 @@ int wpa_supplicant_set_suites(struct wpa_supplicant *wpa_s,
 		wpa_sm_set_param(wpa_s->wpa, WPA_PARAM_DPP_PFS, ssid->dpp_pfs);
 #endif /* CONFIG_DPP2 */
 #endif /* CONFIG_DPP */
+	} else if (wpa_s->key_mgmt & (WPA_KEY_MGMT_WAPI_PSK | WPA_KEY_MGMT_WAPI_CERT)) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi key_mgmt=0x%x TODO %d",
+			__func__, wpa_s->key_mgmt, __LINE__);
 	} else if (wpa_key_mgmt_wpa_psk(ssid->key_mgmt)) {
 		int psk_set = 0;
 
@@ -3389,6 +3438,7 @@ static u8 * wpas_populate_assoc_ies(
 				  2 + 2 * wpabuf_len(req->pkt) / 255;
 	}
 #endif /* CONFIG_FILS */
+	wpa_printf(MSG_ERROR, "%s: shikew_wapi ssid->key_mgmt=0x%x bss=%p %d", __func__, ssid->key_mgmt, bss,__LINE__);
 
 	wpa_ie = os_malloc(max_wpa_ie_len);
 	if (!wpa_ie) {
@@ -3431,6 +3481,8 @@ static u8 * wpas_populate_assoc_ies(
 #endif /* CONFIG_SAE || CONFIG_FILS */
 		}
 		wpa_ie_len = max_wpa_ie_len;
+		
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi %d", __func__,  __LINE__);
 		if (wpa_supplicant_set_suites(wpa_s, bss, ssid,
 					      wpa_ie, &wpa_ie_len, false)) {
 			wpa_msg(wpa_s, MSG_WARNING, "WPA: Failed to set WPA "
@@ -3461,13 +3513,25 @@ static u8 * wpas_populate_assoc_ies(
 		wpa_supplicant_set_non_wpa_policy(wpa_s, ssid);
 		wpa_ie_len = 0;
 		wpa_s->wpa_proto = 0;
+	} else if ((ssid->key_mgmt & (WPA_KEY_MGMT_WAPI_PSK | WPA_KEY_MGMT_WAPI_CERT)) && bss) {
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi TODO %d", __func__,  __LINE__);
+		wpa_ie_len = max_wpa_ie_len;
+		if (wpa_supplicant_set_suites(wpa_s, bss, ssid,
+					      wpa_ie, &wpa_ie_len, false)) {
+			wpa_msg(wpa_s, MSG_WARNING, "WPA: Failed to set WAPI "
+				"key management and encryption suites (no "
+				"scan results) ssid->key_mgmt=0x%x, bss=%p", ssid->key_mgmt, bss);
+			os_free(wpa_ie);
+			return NULL;
+		}
+
 	} else if (wpa_key_mgmt_wpa_any(ssid->key_mgmt)) {
 		wpa_ie_len = max_wpa_ie_len;
 		if (wpa_supplicant_set_suites(wpa_s, NULL, ssid,
 					      wpa_ie, &wpa_ie_len, false)) {
 			wpa_msg(wpa_s, MSG_WARNING, "WPA: Failed to set WPA "
 				"key management and encryption suites (no "
-				"scan results)");
+				"scan results) ssid->key_mgmt=0x%x, bss=%p", ssid->key_mgmt, bss);
 			os_free(wpa_ie);
 			return NULL;
 		}

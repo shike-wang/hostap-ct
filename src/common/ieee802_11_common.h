@@ -41,6 +41,7 @@ struct ieee802_11_elems {
 	const u8 *ext_supp_rates;
 	const u8 *wpa_ie;
 	const u8 *rsn_ie;
+	const u8 *wapi_ie;
 	const u8 *rsnxe;
 	const u8 *wmm; /* WMM Information or Parameter Element */
 	const u8 *wmm_tspec;
@@ -117,6 +118,7 @@ struct ieee802_11_elems {
 	u8 ext_supp_rates_len;
 	u8 wpa_ie_len;
 	u8 rsn_ie_len;
+	u8 wapi_ie_len;
 	u8 rsnxe_len;
 	u8 wmm_len; /* 7 = WMM Information; 24 = WMM Parameter */
 	u8 wmm_tspec_len;

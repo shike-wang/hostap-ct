@@ -294,6 +294,7 @@ static void mlme_event_assoc(struct wpa_driver_nl80211_data *drv,
 				len - 24 - sizeof(mgmt->u.assoc_resp);
 		}
 		event.assoc_reject.status_code = status;
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi status=%d EVENT_ASSOC_REJECT %d", __func__, status, __LINE__);
 
 		wpa_supplicant_event(drv->ctx, EVENT_ASSOC_REJECT, &event);
 		return;
@@ -980,6 +981,8 @@ static void mlme_event_connect(struct wpa_driver_nl80211_data *drv,
 			enum nl80211_timeout_reason reason;
 
 			reason = nla_get_u32(timeout_reason);
+			
+			wpa_printf(MSG_ERROR, "%s: shikew_wapi reason=%d %d", __func__, reason, __LINE__);
 			switch (reason) {
 			case NL80211_TIMEOUT_SCAN:
 				event.assoc_reject.timeout_reason = "scan";
@@ -1007,6 +1010,7 @@ static void mlme_event_connect(struct wpa_driver_nl80211_data *drv,
 				convert_connect_fail_reason_codes(reason_code);
 		}
 #endif /* CONFIG_DRIVER_NL80211_QCA */
+		wpa_printf(MSG_ERROR, "%s: shikew_wapi status_code=%d EVENT_ASSOC_REJECT %d", __func__, event.assoc_reject.status_code, __LINE__);
 
 		wpa_supplicant_event(drv->ctx, EVENT_ASSOC_REJECT, &event);
 		return;
